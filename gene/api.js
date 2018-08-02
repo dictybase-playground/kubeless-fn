@@ -46,12 +46,12 @@ class Response {
     this.res = res
   }
 
-  set error(err) {
-    this.error = err
+  set errorn(err) {
+    this.err = err
   }
 
-  get error() {
-    return this.error
+  get errorn() {
+    return this.err
   }
 
   set success(ok) {
@@ -63,21 +63,27 @@ class Response {
   }
 
   isError() {
-    return this.error
+    if (this.errorn) {
+      return true
+    }
+    return false
   }
 
   isSuccess() {
-    return this.success
+    if (this.success) {
+      return true
+    }
+    return false
   }
 }
 
 class UniprotRes extends Response {
-  get id() {
-    return this.uid
+  get ids() {
+    return this.uids
   }
 
-  set id(id) {
-    this.uid = id
+  set ids(ids) {
+    this.uids = ids
   }
 }
 
@@ -100,34 +106,37 @@ const geneId2Uniprot = async id => {
   if (res.ok) {
     if (res.headers.get("content-length") > 0) {
       const uniprotId = await res.text()
+      ures.ids = uniprotId.split("\n").filter(v => {
+        return v
+      })
       ures.success = true
-      ures.id = uniprotId.trim()
     } else {
-      ures.error = new AppError(`no uniprot id found for ${id}`, 404)
+      ures.errorn = new AppError(`no uniprot id found for ${id}`, 404)
     }
   } else {
-    ures.error = new AppError("unknown uniprot error", res.status)
+    ures.errorn = new AppError("unknown uniprot error", res.status)
   }
   return ures
 }
 
-const uniprot2Goa = async (id, req) => {
-  const goares = await fetch(makeGoaURL(id), {
-    headers: { Accept: "application/json" },
-  })
-  const resp = new Response()
-  if (goares.ok) {
-    const json = await goares.json()
-    resp.response = {
-      links: { self: utils.getOriginalURL(req) },
-      data: normalizeGoa(json),
+const uniprot2Goa = async ids => {
+  const allGoaRes = ids.map(async v => {
+    const goares = await fetch(makeGoaURL(v), {
+      headers: { Accept: "application/json" },
+    })
+    const resp = new Response()
+    if (goares.ok) {
+      const json = await goares.json()
+      resp.response = normalizeGoa(json)
+      resp.success = true
+    } else {
+      const errjson = await goares.json()
+      resp.errorn = new AppError(errjson.messages[0], goares.status)
     }
-    resp.success = true
-  } else {
-    const errjson = await goares.json()
-    resp.error = new AppError(errjson.messages[0], goares.status)
-  }
-  return resp
+    return Promise.resolve(resp)
+  })
+  const allRes = await Promise.all(allGoaRes)
+  return allRes
 }
 
 // handlers
@@ -161,13 +170,36 @@ const geneGoaHandler = async (req, res) => {
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
-      const gres = await uniprot2Goa(ures.id, req)
-      if (gres.isSuccess()) {
-        res.status(200)
-        return gres.response
+      const gres = await uniprot2Goa(ures.ids, req)
+      // No of error responses
+      const errCount = gres.reduce((acc, curr) => {
+        if (curr.isError()) {
+          return acc + 1
+        }
+        return acc
+      }, 0)
+      // No error
+      if (errCount === 0) {
+        return {
+          links: { self: utils.getOriginalURL(req) },
+          data: gres.map(r => {
+            return r.response
+          }),
+        }
       }
-      res.status(gres.error.status)
-      return utils.errMessage(gres.error.status, gres.message, orgURL)
+      // All of them are error responses
+      if (gres.length === errCount) {
+        res.status(gres[0].error.status)
+        return utils.errMessage(gres[0].error.status, gres[0].message, orgURL)
+      }
+      // Mix of error and success
+      const succRes = gres.find(r => {
+        return r.isSuccess()
+      })
+      return {
+        links: { self: utils.getOriginalURL(req) },
+        data: succRes.response,
+      }
     }
     res.status(ures.error.status)
     return utils.errMessage(ures.error.status, ures.message, orgURL)
