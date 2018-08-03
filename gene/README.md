@@ -13,6 +13,11 @@ A [kubeless](https://kubeless.io) function to deploy in kubernetes cluster.
 * check the status of function
 > `$_> kubeless function ls --namespace dictybase`
 
+* to update the function, use:
+> `$_>  kubeless function update \`   
+> `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene`   
+> `--dependencies package.json --namespace dictybase`
+
 ## Add a http trigger to create an ingress
 > `$_> kubeless trigger http create genefn \`   
 > `--function-name genefn --hostname betafunc.dictybase.local \`   
