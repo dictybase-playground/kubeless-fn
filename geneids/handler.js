@@ -1,6 +1,7 @@
 const fs = require("fs")
 const redis = require("redis")
 const Minio = require("minio")
+const filepath = require("path")
 const tmp = require("tmp")
 const bunyan = require("bunyan")
 const metadata = require("./metadata.json")
@@ -16,15 +17,15 @@ const logger = bunyan.createLogger({
 /**
  * Instantiate Redis client from env variable
  */
-// const client = redis.createClient(
-//   `${process.env.REDIS_MASTER_SERVICE_HOST}:${process.env.REDIS_MASTER_SERVICE_PORT}`,
-// )
-// client.on("connect", () => {
-//   logger.info("Redis client connected")
-// })
-// client.on("error", err => {
-//   logger.error(`Something went wrong ${err}`)
-// })
+const client = redis.createClient(
+  `${process.env.REDIS_MASTER_SERVICE_HOST}:${process.env.REDIS_MASTER_SERVICE_PORT}`,
+)
+client.on("connect", () => {
+  logger.info("Redis client connected")
+})
+client.on("error", err => {
+  logger.error(`Something went wrong ${err}`)
+})
 
 /**
  * Instantiate Minio client from env variable
@@ -38,15 +39,22 @@ const minioClient = new Minio.Client({
   secretKey: process.env.MINIO_SERVICE_KEY,
 })
 
+/**
+ * Put our file handling logic in a class
+ */
 class FileHandler {
-  cache(file) {
-    /**
-     * Take the specified GFF3 and parse it down to a nested array
-     * featuring id and name elements
-     */
+  constructor({ fileLocation }) {
+    this.fileLocation = fileLocation
+  }
+
+  /**
+   * Take the specified GFF3 and parse it down to a nested array
+   * featuring id and name elements
+   */
+  cache() {
     const initialArr = fs
       // read specified file
-      .readFileSync(file)
+      .readFileSync(this.fileLocation)
       // convert to string
       .toString()
       // split by new line
@@ -71,32 +79,31 @@ class FileHandler {
       .map(item => {
         return [item[0].substr(3), item[1].substr(5)]
       })
-    // set ID and name as key-value pairs in Redis
-    // .forEach(item => {
-    //   client.hset("GENE2NAME/geneids", item[0], item[1], redis.print)
-    // })
+      // set ID and name as key-value pairs in Redis
+      .forEach(item => {
+        client.hset("GENE2NAME/geneids", item[0], item[1], redis.print)
+      })
   }
 }
 
 const runner = () => {
-  /**
-   * Create temp folder to store file
-   */
+  // create temp folder to store file
   const tmpObj = tmp.dirSync({ prefix: "minio-" })
   const folder = tmpObj.name
-  const file = `${folder}/${metadata.file}`
-  /**
-   * Get object from Minio
-   */
-  minioClient.fGetObject(metadata.bucket, metadata.file, file, err => {
+  const fileLocation = filepath.join(folder, metadata.file)
+
+  // get object from Minio
+  minioClient.fGetObject(metadata.bucket, metadata.file, fileLocation, err => {
     if (err) {
       return logger.error(err)
     }
-    logger.info("success")
-  })
+    logger.info("Object download success!")
 
-  const uploader = new FileHandler()
-  uploader.cache(file)
+    // got the file, now pass the file location into our class
+    const storeFileContent = new FileHandler({ fileLocation })
+    // call the cache method
+    storeFileContent.cache()
+  })
 }
 
 runner()
