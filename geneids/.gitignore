@@ -1,3 +1,6 @@
 .DS_STORE
 
 node_modules
+metadata.json
+*.gff3
+geneidsfn.zip
