@@ -4,7 +4,8 @@
   "description": "Retrieve gene name from given gene ID",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "precommit": "lint-staged"
   },
   "author": "Eric Hartline",
   "license": "ISC",
