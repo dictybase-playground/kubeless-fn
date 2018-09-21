@@ -52,7 +52,7 @@ class FileHandler {
    * featuring id and name elements
    */
   cache() {
-    const initialArr = fs
+    const cacheArray = fs
       // read specified file
       .readFileSync(this.fileLocation)
       // convert to string
