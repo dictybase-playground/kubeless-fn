@@ -71,9 +71,9 @@ const errMessage = (code, msg, url) => {
  * Put our file handling logic in a class
  */
 class FileHandler {
-  constructor({ fileLocation, redisClient }) {
+  constructor({ fileLocation, client }) {
     this.fileLocation = fileLocation
-    this.redisClient = redisClient
+    this.client = client
   }
 
   /**
@@ -81,79 +81,86 @@ class FileHandler {
    * featuring id and name elements
    */
   cache() {
-    const cacheArray = fs
-      // read specified file
-      .readFileSync(this.fileLocation)
-      // convert to string
-      .toString()
-      // split by new line
-      .split("\n")
-      // return array split by tab
-      .map(item => {
-        return item.split("\t")
-      })
-      // only get "gene" lines
-      .filter(item => {
-        return item[2] === "gene"
-      })
-      // return the last column
-      .map(item => {
-        return item[8]
-      })
-      // split this data by semicolon
-      .map(item => {
-        return item.split(";")
-      })
-      // get only ID and name values
-      .map(item => {
-        return [item[0].substr(3), item[1].substr(5)]
-      })
-      // set ID and name as key-value pairs in Redis
-      .forEach(item => {
-        this.redisClient.hset("GENE2NAME/geneids", item[0], item[1])
-      })
+    return (
+      fs
+        // read specified file
+        .readFileSync(this.fileLocation)
+        // convert to string
+        .toString()
+        // split by new line
+        .split("\n")
+        // return array split by tab
+        .map(item => {
+          return item.split("\t")
+        })
+        // only get "gene" lines
+        .filter(item => {
+          return item[2] === "gene"
+        })
+        // return the last column
+        .map(item => {
+          return item[8]
+        })
+        // split this data by semicolon
+        .map(item => {
+          return item.split(";")
+        })
+        // get only ID and name values
+        .map(item => {
+          return [item[0].substr(3), item[1].substr(5)]
+        })
+        // set ID and name as key-value pairs in Redis
+        .forEach(item => {
+          this.client.hset("GENE2NAME/geneids", item[0], item[1])
+        })
+    )
   }
 }
 
-const geneids = event => {
+const setCache = event => {
   const req = event.extensions.request
   const res = event.extensions.response
   const path = req.get("x-original-uri")
   res.set("X-Powered-By", "kubeless")
   res.set("Content-Type", "application/vnd.api+json")
 
-  // if there is a metadata file, act as POST route
-  if (event.data.bucket) {
-    try {
-      // create temp folder to store file
-      const tmpObj = tmp.dirSync({ prefix: "minio-" })
-      const folder = tmpObj.name
-      const fileLocation = filepath.join(folder, event.data.file)
+  try {
+    // create temp folder to store file
+    const tmpObj = tmp.dirSync({ prefix: "minio-" })
+    const folder = tmpObj.name
+    const fileLocation = filepath.join(folder, event.data.file)
 
-      // get object from Minio
-      minioClient.fGetObject(
-        event.data.bucket,
-        event.data.file,
-        fileLocation,
-        err => {
-          if (err) {
-            return logger.error("Error getting object: ", error)
-          }
-          logger.info("Object download success!")
+    // get object from Minio
+    minioClient.fGetObject(
+      event.data.bucket,
+      event.data.file,
+      fileLocation,
+      err => {
+        if (err) {
+          return logger.error("Error getting object: ", err)
+        }
+        logger.info("Object download success!")
 
-          // got the file, now pass the file location into our class
-          const storeFileContent = new FileHandler({
-            fileLocation,
-            redisClient,
-          })
-          // call the cache method
-          storeFileContent.cache()
-        },
-      )
-    } catch (error) {
-      return errMessage(500, error.message, path)
-    }
+        // got the file, now pass the file location into our class
+        const storeFileContent = new FileHandler({
+          fileLocation,
+          redisClient,
+        })
+        // call the cache method
+        storeFileContent.cache()
+      },
+    )
+  } catch (error) {
+    return errMessage(500, error.message, path)
   }
+}
+
+const getData = event => {
+  const req = event.extensions.request
+  const res = event.extensions.response
+  const path = req.get("x-original-uri")
+  res.set("X-Powered-By", "kubeless")
+  res.set("Content-Type", "application/vnd.api+json")
 
   // else get data
   try {
@@ -171,14 +178,14 @@ const geneids = event => {
   }
 }
 
-module.exports = { geneids }
+module.exports = { setCache, getData }
 
 /**
  * Where I'm at:
  * 1. I need to test the actual deployment. Is this the right approach inside the geneids function?
  * 2. The last commit was working locally, with this reading metadata.json, grabbing the specified file from Minio, then caching it in Redis.
  * 3. I updated this to grab the info from metadata.json as CLI argument. Need to verify that this is in fact correct.
- * 4. Trying to handle both POST/GET inside geneids function. Initial thought was a conditional to check if the deployment includes a file.
+ * 4. POST/GET requests are separated into their own functions. Need to verify that req.path gets the right ID.
  * 5. Also, where is the connection between the route and the data?
  *
  * Look at previous commit for working local version.
