@@ -17,9 +17,8 @@ const logger = bunyan.createLogger({
  * Instantiate Redis client from env variable
  */
 const redisClient = redis.createClient(
-  `${process.env.REDIS_MASTER_SERVICE_HOST}:${
-    process.env.REDIS_MASTER_SERVICE_PORT
-  }`,
+  process.env.REDIS_MASTER_SERVICE_PORT,
+  process.env.REDIS_MASTER_SERVICE_HOST,
 )
 redisClient.on("connect", () => {
   logger.info("Redis client connected")
@@ -76,7 +75,6 @@ const setCache = feature => {
       "GENE2NAME/geneids",
       feature.attributes.ID,
       feature.attributes.Name,
-      redis.print,
     )
   }
 }
@@ -84,7 +82,7 @@ const done = () => {
   console.log("Done reading GFF3 file")
 }
 
-const file2Redis = event => {
+const file2redis = event => {
   const req = event.extensions.request
   const res = event.extensions.response
   const path = req.get("x-original-uri")
@@ -114,6 +112,8 @@ const file2Redis = event => {
           .on("end", done)
       },
     )
+
+    return {}
   } catch (error) {
     return errMessage(500, error.message, path)
   }
@@ -142,4 +142,13 @@ const getData = event => {
   }
 }
 
-module.exports = { file2Redis, getData }
+/**
+ * Function to check what's in the cache (if desired)
+ */
+const checkCache = event => {
+  redisClient.hgetall("GENE2NAME/geneids", (err, result) => {
+    console.log(JSON.stringify(result)) // {"key":"value","second key":"second value"}
+  })
+}
+
+module.exports = { file2redis, getData, checkCache }
