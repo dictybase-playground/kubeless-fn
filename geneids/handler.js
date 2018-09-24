@@ -80,7 +80,7 @@ const setCache = feature => {
   }
 }
 const done = () => {
-  console.log("Done reading GFF3 file")
+  logger.info("Done reading GFF3 file")
 }
 
 /**
@@ -162,17 +162,7 @@ const gene2name = event => {
           logger.info(
             `successfully found geneId ${geneId} and geneName ${result}`,
           )
-          console.log(typeof geneId, typeof result)
-          json = {
-            data: {
-              type: "genes",
-              id: geneId,
-              attributes: {
-                geneName: result,
-                geneId,
-              },
-            },
-          }
+          json = successObj(geneId, result)
         })
       }
     })
