@@ -1,4 +1,4 @@
-const redis = require("redis")
+const Redis = require("ioredis")
 const Minio = require("minio")
 const gff = require("bionode-gff")
 const filepath = require("path")
@@ -19,7 +19,7 @@ const logger = bunyan.createLogger({
 /**
  * Instantiate Redis client from env variable
  */
-const redisClient = redis.createClient(
+const redisClient = new Redis(
   process.env.REDIS_MASTER_SERVICE_PORT,
   process.env.REDIS_MASTER_SERVICE_HOST,
 )
@@ -138,37 +138,20 @@ const gene2name = event => {
   res.set("Content-Type", "application/vnd.api+json")
 
   try {
-    // if (redisClient.hexists(hash, geneId)) {
-    //   redisClient.hget(hash, geneId, (err, result) => {
-    //     if (err) {
-    //       logger.error("no match for route")
-    //     }
-    //     logger.info(`successfully found geneId ${geneId} and geneName ${result}`)
-    //     return successObj(geneId, result)
-    //   })
-    // }
-    // return errMessage(404, "no match for route", route)
-    let json
-
-    redisClient.hexists(hash, geneId, (err, exists) => {
-      if (err) {
-        logger.info("geneid doesn't exist")
-        res.status(404)
-        return errMessage(404, "no match for route", route)
-      }
-
-      if (exists) {
-        redisClient.hget(hash, geneId, (error, result) => {
+    return redisClient.hexists(hash, geneId).then(result => {
+      if (result === 1) {
+        return redisClient.hget(hash, geneId).then(value => {
           logger.info(
-            `successfully found geneId ${geneId} and geneName ${result}`,
+            `successfully found geneId ${geneId} and geneName ${value}`,
           )
-          json = successObj(geneId, result)
+          res.status(200)
+          return successObj(geneId, value)
         })
       }
+      logger.info("geneid doesn't exist")
+      res.status(404)
+      return errMessage(404, "no match for route", route)
     })
-
-    console.log(json) // undefined
-    return { test: "test" } // successful response
   } catch (error) {
     res.status(500)
     return errMessage(500, error.message, route)

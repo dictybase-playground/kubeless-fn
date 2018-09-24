@@ -12,8 +12,8 @@
   "dependencies": {
     "bionode-gff": "^2.0.0",
     "bunyan": "^1.8.12",
+    "ioredis": "^4.0.0",
     "minio": "^7.0.1",
-    "redis": "^2.8.0",
     "tmp": "0.0.33"
   },
   "devDependencies": {
