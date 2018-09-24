@@ -64,7 +64,7 @@ This file specifies the file location in the object storage.
 
 > `$_> kubeless trigger http create cachefn \`  
 > `--function-name cachefn --hostname betafunc.dictybase.local \`  
-> `--tls-secret dictybase-local-tls --namespace dictybase --path goa/converter`
+> `--tls-secret dictybase-local-tls --namespace dictybase --path goa/cache`
 
 The above command assumes a presence of tls secret`(dictybase-local-tls)` and mapping
 to the host`(betafunc.dictybase.local)`.
@@ -74,9 +74,9 @@ to the host`(betafunc.dictybase.local)`.
 It will available through the mapped host, for example through
 `betafunc.dictybase.local` assuming the above function.
 
-**POST** `/goa/converter` - Stores gene ID and name as key-value pairs in Redis cache.
+**POST** `/goa/cache` - Stores gene ID and name as key-value pairs in Redis cache.
 It will use `metadata.json` file to download the gff3 file from object storage and
 persist the information in redis cache. An example `HTTP` request to this endpoint
 will look like this.
 
-> `$_> curl -k -d @metadata.json https://betafunction.dictybase.local/goa/converter`
+> `$_> curl -k -d @metadata.json https://betafunction.dictybase.local/goa/cache`
