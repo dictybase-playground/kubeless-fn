@@ -10,6 +10,7 @@
   "author": "Eric Hartline",
   "license": "ISC",
   "dependencies": {
+    "bionode-gff": "^2.0.0",
     "bunyan": "^1.8.12",
     "minio": "^7.0.1",
     "redis": "^2.8.0",
