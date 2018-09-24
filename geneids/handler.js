@@ -5,6 +5,9 @@ const filepath = require("path")
 const tmp = require("tmp")
 const bunyan = require("bunyan")
 
+// Set the hash location
+const hash = "GENE2NAME/geneids"
+
 /**
  * Create Bunyan logger
  */
@@ -42,13 +45,15 @@ const minioClient = new Minio.Client({
 /**
  * OK response helper
  */
-const successMessage = (id, name) => {
+const successObj = (id, name) => {
   return {
-    type: "gene",
-    id,
-    attributes: {
-      geneName: name,
-      geneId: id,
+    data: {
+      type: "genes",
+      id,
+      attributes: {
+        geneName: name,
+        geneId: id,
+      },
     },
   }
 }
@@ -71,17 +76,18 @@ const errMessage = (code, msg, url) => {
  */
 const setCache = feature => {
   if (feature.type === "gene") {
-    redisClient.hset(
-      "GENE2NAME/geneids",
-      feature.attributes.ID,
-      feature.attributes.Name,
-    )
+    redisClient.hset(hash, feature.attributes.ID, feature.attributes.Name)
   }
 }
 const done = () => {
   console.log("Done reading GFF3 file")
 }
 
+/**
+ * Kubeless function that gets file from Minio,
+ * parses its content then stores gene ID and name
+ * into Redis cache.
+ */
 const file2redis = event => {
   const req = event.extensions.request
   const res = event.extensions.response
@@ -118,34 +124,72 @@ const file2redis = event => {
   }
 }
 
+/**
+ * Kubeless function that sends back gene name and ID
+ * when it receives an ID
+ */
 const gene2name = event => {
   const req = event.extensions.request
   const res = event.extensions.response
-  const path = req.get("x-original-uri")
+  const route = req.get("x-original-uri")
+  const geneId = req.params[0].substring(1)
+
   res.set("X-Powered-By", "kubeless")
   res.set("Content-Type", "application/vnd.api+json")
 
-  // else get data
   try {
-    if (redisClient.hexists("GENE2NAME/geneids", path)) {
-      return redisClient.hget(path, (err, result) => {
-        if (err) {
-          throw err
-        }
-        successMessage(path, result)
-      })
-    }
-    return errMessage(404, "no match for route", path)
+    // if (redisClient.hexists(hash, geneId)) {
+    //   redisClient.hget(hash, geneId, (err, result) => {
+    //     if (err) {
+    //       logger.error("no match for route")
+    //     }
+    //     logger.info(`successfully found geneId ${geneId} and geneName ${result}`)
+    //     return successObj(geneId, result)
+    //   })
+    // }
+    // return errMessage(404, "no match for route", route)
+    let json
+
+    redisClient.hexists(hash, geneId, (err, exists) => {
+      if (err) {
+        logger.info("geneid doesn't exist")
+        res.status(404)
+        return errMessage(404, "no match for route", route)
+      }
+
+      if (exists) {
+        redisClient.hget(hash, geneId, (error, result) => {
+          logger.info(
+            `successfully found geneId ${geneId} and geneName ${result}`,
+          )
+          console.log(typeof geneId, typeof result)
+          json = {
+            data: {
+              type: "genes",
+              id: geneId,
+              attributes: {
+                geneName: result,
+                geneId,
+              },
+            },
+          }
+        })
+      }
+    })
+
+    console.log(json) // undefined
+    return { test: "test" } // successful response
   } catch (error) {
-    return errMessage(500, error.message, path)
+    res.status(500)
+    return errMessage(500, error.message, route)
   }
 }
 
 /**
- * Function to check what's in the cache (if desired)
+ * Function to check what's in the cache
  */
 const checkCache = () => {
-  redisClient.hgetall("GENE2NAME/geneids", (err, result) => {
+  redisClient.hgetall(hash, (err, result) => {
     console.log(JSON.stringify(result)) // {"key":"value","second key":"second value"}
   })
 }
