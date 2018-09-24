@@ -119,7 +119,7 @@ const file2redis = event => {
   }
 }
 
-const getData = event => {
+const gene2name = event => {
   const req = event.extensions.request
   const res = event.extensions.response
   const path = req.get("x-original-uri")
@@ -145,10 +145,10 @@ const getData = event => {
 /**
  * Function to check what's in the cache (if desired)
  */
-const checkCache = event => {
+const checkCache = () => {
   redisClient.hgetall("GENE2NAME/geneids", (err, result) => {
     console.log(JSON.stringify(result)) // {"key":"value","second key":"second value"}
   })
 }
 
-module.exports = { file2redis, getData, checkCache }
+module.exports = { file2redis, gene2name, checkCache }
