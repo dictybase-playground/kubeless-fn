@@ -41,4 +41,42 @@ This file specifies the file location in the object storage.
 }
 ```
 
-Deployment information coming soon...
+## Deploy
+
+- deploy the cachefn function
+
+  > `$_> kubeless function deploy \`  
+  > `cachefn --runtime nodejs8 --from-file handler.js --handler handler.file2redis`  
+  > `--dependencies package.json --namespace dictybase -e MINIO_ACCESS_KEY=YOUR_KEY -e MINIO_SECRET_KEY=YOUR_KEY`
+
+<em>Note: you also need to ensure `REDIS_MASTER_SERVICE_HOST`, `REDIS_MASTER_SERVICE_PORT`, `MINIO_SERVICE_HOST` and `MINIO_SERVICE_PORT` are set as well.</em>
+
+- check the status of the function
+
+  > `$_> kubeless function ls --namespace dictybase`
+
+- to update the function, use:
+  > `$_> kubeless function update \`  
+  > `cachefn --runtime nodejs8 --from-file handler.js --handler handler.file2redis`  
+  > `--dependencies package.json --namespace dictybase`
+
+## Add a http trigger to create an ingress
+
+> `$_> kubeless trigger http create cachefn \`  
+> `--function-name cachefn --hostname betafunc.dictybase.local \`  
+> `--tls-secret dictybase-local-tls --namespace dictybase --path goa/converter`
+
+The above command assumes a presence of tls secret`(dictybase-local-tls)` and mapping
+to the host`(betafunc.dictybase.local)`.
+
+## Endpoints
+
+It will available through the mapped host, for example through
+`betafunc.dictybase.local` assuming the above function.
+
+**POST** `/goa/converter` - Stores gene ID and name as key-value pairs in Redis cache.
+It will use `metadata.json` file to download the gff3 file from object storage and
+persist the information in redis cache. An example `HTTP` request to this endpoint
+will look like this.
+
+> `$_> curl -k -d @metadata.json https://betafunction.dictybase.local/goa/converter`
