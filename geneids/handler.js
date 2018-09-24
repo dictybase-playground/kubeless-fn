@@ -128,7 +128,7 @@ const file2redis = event => {
  * Kubeless function that sends back gene name and ID
  * when it receives an ID
  */
-const gene2name = event => {
+const gene2name = async event => {
   const req = event.extensions.request
   const res = event.extensions.response
   const route = req.get("x-original-uri")
@@ -138,20 +138,18 @@ const gene2name = event => {
   res.set("Content-Type", "application/vnd.api+json")
 
   try {
-    return redisClient.hexists(hash, geneId).then(result => {
-      if (result === 1) {
-        return redisClient.hget(hash, geneId).then(value => {
-          logger.info(
-            `successfully found geneId ${geneId} and geneName ${value}`,
-          )
-          res.status(200)
-          return successObj(geneId, value)
-        })
-      }
-      logger.info("geneid doesn't exist")
-      res.status(404)
-      return errMessage(404, "no match for route", route)
-    })
+    const exists = await redisClient.hexists(hash, geneId)
+
+    if (exists === 1) {
+      const value = await redisClient.hget(hash, geneId)
+      logger.info(`successfully found geneId ${geneId} and geneName ${value}`)
+      res.status(200)
+      return successObj(geneId, value)
+    }
+
+    logger.info("geneid doesn't exist")
+    res.status(404)
+    return errMessage(404, "no match for route", route)
   } catch (error) {
     res.status(500)
     return errMessage(500, error.message, route)
