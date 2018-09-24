@@ -87,7 +87,6 @@ const file2redis = event => {
   const res = event.extensions.response
   const path = req.get("x-original-uri")
   res.set("X-Powered-By", "kubeless")
-  res.set("Content-Type", "application/vnd.api+json")
 
   try {
     // create temp folder to store file
@@ -128,12 +127,12 @@ const gene2name = event => {
 
   // else get data
   try {
-    if (redisClient.hexists("GENE2NAME/geneids", req.path)) {
-      return redisClient.hget(req.path, (err, result) => {
+    if (redisClient.hexists("GENE2NAME/geneids", path)) {
+      return redisClient.hget(path, (err, result) => {
         if (err) {
           throw err
         }
-        successMessage(req.path, result)
+        successMessage(path, result)
       })
     }
     return errMessage(404, "no match for route", path)
