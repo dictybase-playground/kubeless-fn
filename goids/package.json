@@ -11,7 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "bunyan": "^1.8.12",
-    "ioredis": "^4.0.0"
+    "ioredis": "^4.0.0",
+    "node-fetch": "^2.2.0"
   },
   "devDependencies": {
     "eslint": "^4.19.1",

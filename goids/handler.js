@@ -1,5 +1,7 @@
 const Redis = require("ioredis")
+const fetch = require("node-fetch")
 const bunyan = require("bunyan")
+const utils = require("./utils")
 
 // Set the hash location
 const hash = "GO2NAME/goids"
@@ -27,31 +29,44 @@ redisClient.on("error", err => {
 })
 
 /**
- * OK response helper
+ * Create URL to fetch GO data
  */
-const successObj = (id, name) => {
+const makeGoURL = id => {
+  return `https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/${id}`
+}
+
+/**
+ * Normalize the JSON response into data we actually need
+ */
+const normalizeData = data => {
   return {
     data: {
-      type: "goa",
-      id,
+      type: "go",
+      id: data.results[0].id,
       attributes: {
-        goName: name,
-        goId: id,
+        id: data.results[0].id,
+        name: data.results[0].name,
       },
     },
   }
 }
 
 /**
- * Error message helper
+ * Handle the fetch request
  */
-const errMessage = (code, msg, url) => {
-  return {
-    status: code,
-    title: msg,
-    detail: msg,
-    source: { pointer: url },
-    meta: { creator: "kubeless function api" },
+const goName2Id = async id => {
+  try {
+    const res = await fetch(makeGoURL(id))
+    const json = await res.json()
+
+    if (res.ok) {
+      await redisClient.hset(hash, json.results[0].id, json.results[0].name)
+      return normalizeData(json)
+    }
+
+    return utils.errMessage(404, json.messages[0])
+  } catch (error) {
+    return utils.errMessage(500, error.message)
   }
 }
 
@@ -75,15 +90,13 @@ const go2name = async event => {
       const value = await redisClient.hget(hash, goId)
       logger.info(`successfully found goId ${goId} and goName ${value}`)
       res.status(200)
-      return successObj(goId, value)
+      return utils.successObj(goId, value)
     }
 
-    logger.info("goid doesn't exist")
-    res.status(404)
-    return errMessage(404, "no match for route", route)
+    return goName2Id(goId)
   } catch (error) {
     res.status(500)
-    return errMessage(500, error.message, route)
+    return utils.errMessage(500, error.message, route)
   }
 }
 
