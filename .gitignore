@@ -12,3 +12,5 @@ build/
 static-server
 .env.production.local
 gene.zip
+metadata.json
+*.gff3
