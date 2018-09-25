@@ -98,7 +98,7 @@ It will use `metadata.json` file to download the gff3 file from object storage a
 persist the information in redis cache. An example `HTTP` request to this endpoint
 will look like this.
 
-> `$_> curl -k -d @metadata.json https://betafunc.dictybase.local/goa/cache`
+> `$_> curl -k -X POST https://betafunc.dictybase.local/goa/cache -H 'Content-Type: application/json' -d @metadata.json`
 
 **GET** `/goa/converter/{gene_id}` - Gets the gene name for a given gene ID.
 
