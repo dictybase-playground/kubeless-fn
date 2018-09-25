@@ -61,6 +61,11 @@ const goName2Id = async id => {
 
     if (res.ok) {
       await redisClient.hset(hash, json.results[0].id, json.results[0].name)
+      logger.info(
+        `Successfully set ${json.results[0].id}:${
+          json.results[0].name
+        } in hash ${hash}`,
+      )
       return normalizeData(json)
     }
 
