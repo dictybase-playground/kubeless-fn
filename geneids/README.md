@@ -69,22 +69,15 @@ This file specifies the file location in the object storage.
 The above command assumes a presence of tls secret`(dictybase-local-tls)` and mapping
 to the host`(betafunc.dictybase.local)`.
 
+## Deploy
+
 - deploy the gene2namefn function
 
   > `$_> kubeless function deploy \`  
-  > `cachefn --runtime nodejs8 --from-file handler.js --handler handler.gene2name`  
-  > `--dependencies package.json --namespace dictybase -e MINIO_ACCESS_KEY=YOUR_KEY -e MINIO_SECRET_KEY=YOUR_KEY`
-
-<em>Note: you also need to ensure `REDIS_MASTER_SERVICE_HOST`, `REDIS_MASTER_SERVICE_PORT`, `MINIO_SERVICE_HOST` and `MINIO_SERVICE_PORT` are set as well.</em>
-
-- check the status of the function
-
-  > `$_> kubeless function ls --namespace dictybase`
-
-- to update the function, use:
-  > `$_> kubeless function update \`  
   > `gene2namefn --runtime nodejs8 --from-file handler.js --handler handler.gene2name`  
   > `--dependencies package.json --namespace dictybase`
+
+<em>Note: you also need to ensure `REDIS_MASTER_SERVICE_HOST` and `REDIS_MASTER_SERVICE_PORT` are set as well.</em>
 
 ## Add a http trigger to create an ingress
 
@@ -107,7 +100,7 @@ will look like this.
 
 > `$_> curl -k -d @metadata.json https://betafunc.dictybase.local/goa/cache`
 
-**GET** `/gene/converter/{gene_id}` - Gets the gene name for a given gene ID.
+**GET** `/goa/converter/{gene_id}` - Gets the gene name for a given gene ID.
 
 > `$_> curl -k https://betafunc.dictybase.local/goa/converter/DDB_G0288511`
 

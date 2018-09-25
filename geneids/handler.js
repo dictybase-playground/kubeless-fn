@@ -31,18 +31,6 @@ redisClient.on("error", err => {
 })
 
 /**
- * Instantiate Minio client from env variable
- */
-const minioClient = new Minio.Client({
-  endPoint: process.env.MINIO_SERVICE_HOST,
-  // convert the env string to number
-  port: parseInt(process.env.MINIO_SERVICE_PORT, 10),
-  useSSL: false,
-  accessKey: process.env.MINIO_ACCESS_KEY,
-  secretKey: process.env.MINIO_SERVICE_KEY,
-})
-
-/**
  * OK response helper
  */
 const successObj = (id, name) => {
@@ -95,6 +83,17 @@ const file2redis = event => {
   res.set("X-Powered-By", "kubeless")
 
   try {
+    /**
+     * Instantiate Minio client from env variable
+     */
+    const minioClient = new Minio.Client({
+      endPoint: process.env.MINIO_SERVICE_HOST,
+      // convert the env string to number
+      port: parseInt(process.env.MINIO_SERVICE_PORT, 10),
+      useSSL: false,
+      accessKey: process.env.MINIO_ACCESS_KEY,
+      secretKey: process.env.MINIO_SERVICE_KEY,
+    })
     // create temp folder to store file
     const tmpObj = tmp.dirSync({ prefix: "minio-" })
     const folder = tmpObj.name
@@ -118,6 +117,7 @@ const file2redis = event => {
       },
     )
 
+    res.status(201)
     return {}
   } catch (error) {
     return errMessage(500, error.message, path)
