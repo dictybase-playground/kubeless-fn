@@ -1,15 +1,14 @@
 /**
  * OK response helper
  */
-const successObj = (uniprotId, geneId, geneName) => {
+const successObj = (uniprotId, geneName) => {
   return {
     data: {
       type: "genes",
-      uniprotId,
+      id: uniprotId,
       attributes: {
         uniprotId,
         geneName,
-        geneId,
       },
     },
   }

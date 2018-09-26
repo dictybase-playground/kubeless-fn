@@ -5,7 +5,8 @@ const events = require("events")
 
 const txt = new events.EventEmitter()
 
-txt.read = path => {
+// eslint-disable-next-line
+txt.read = function(path) {
   const instream = fs.createReadStream(path)
   const outstream = new Stream()
   const rl = readline.createInterface(instream, outstream)
