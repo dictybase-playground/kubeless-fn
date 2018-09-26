@@ -13,7 +13,8 @@
   "dependencies": {
     "bunyan": "^1.8.12",
     "ioredis": "^4.0.0",
-    "minio": "^7.0.1"
+    "minio": "^7.0.1",
+    "tmp": "0.0.33"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
