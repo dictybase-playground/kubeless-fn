@@ -16,6 +16,8 @@ for the function to work. The instructions are given
 Either use the minio web interface or use the minio command line
 [tool](https://docs.minio.io/docs/minio-client-quickstart-guide.html)
 
+**Important:** The file you need to use for this is inside our `Migration-Data` Box folder (`dicty.txt`).
+
 Add host
 
 > `$_> mc config host add locals3 $(minikube service --url minio --namespace dictybase) ACCESS_KEY SECRET_KEY`
@@ -117,7 +119,6 @@ will look like this.
     "id": "Q54NC6",
     "attributes": {
       "geneName": "anapc1",
-      "geneId": "DDB_G0285349",
       "uniprotId": "Q54NC6"
     }
   }
