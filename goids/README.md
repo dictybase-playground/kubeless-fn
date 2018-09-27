@@ -10,7 +10,7 @@ A Node.js based [kubeless](https://kubeless.io) function to deploy in kubernetes
 ## Deploy
 
 - Zip the required files
-  > `$_> zip gene.zip *.js`
+  > `$_> zip goids.zip *.js`
 
 * deploy the goidsfn function
   > `kubeless function deploy goidsfn --runtime nodejs8 --from-file goids.zip --handler handler.go2name --dependencies package.json --namespace dictybase`
