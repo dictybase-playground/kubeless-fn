@@ -26,6 +26,73 @@ const makeGoaURL = id => {
   return `${base}${query}${id}`
 }
 
+// converts gene ID to name using Redis cache
+const gene2name = async id => {
+  const hash = "GENE2NAME/geneids"
+  try {
+    const exists = await redisClient.hexists(hash, id)
+
+    if (exists === 1) {
+      const value = await redisClient.hget(hash, id)
+      console.log(`successfully found geneId ${id} and geneName ${value}`)
+      return {
+        data: {
+          type: "genes",
+          id,
+          attributes: {
+            geneName: value,
+            geneId: id,
+          },
+        },
+      }
+    }
+
+    console.log("geneid doesn't exist")
+    return {
+      status: 404,
+      title: "no match for route",
+      detail: "no match for route",
+      meta: { creator: "kubeless function api" },
+    }
+  } catch (error) {
+    return {
+      status: 500,
+      title: error.message,
+      detail: error.message,
+      meta: { creator: "kubeless function api" },
+    }
+  }
+}
+
+// Why does this always return {}?
+// Could be due to the nested arrays...
+// Due to async, function always returns a promise
+// Here, we explicitly return Promise.all for all items of mapped array
+const convertExtensions = async ext => {
+  if (ext === null) {
+    return null
+  }
+  const extRes = ext.map(async item => {
+    item.connectedXrefs.map(async xref => {
+      if (xref.db === "DDB") {
+        const name = await gene2name(xref.id)
+        const response = {
+          db: xref.db,
+          id: xref.id,
+          relation: xref.relation,
+          name: name.data.attributes.geneName,
+        }
+        console.log("response: ", response)
+        return Promise.resolve(response)
+      }
+      console.log("xref: ", xref)
+      return Promise.resolve(xref)
+    })
+  })
+  const allRes = await Promise.all(extRes)
+  return allRes
+}
+
 const normalizeGoa = goaResp => {
   if (goaResp.numberOfHits === 0) {
     return []
@@ -41,7 +108,7 @@ const normalizeGoa = goaResp => {
         qualifier: r.qualifier,
         publication: r.reference,
         with: r.withFrom,
-        extensions: r.extensions,
+        extensions: convertExtensions(r.extensions),
         assigned_by: r.assignedBy,
       },
     }
@@ -176,14 +243,14 @@ const geneGoaHandler = async (req, res) => {
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
-      const exists = await redisClient.exists(redisKey)
+      // const exists = await redisClient.exists(redisKey)
 
-      if (exists === 1) {
-        const value = await redisClient.get(redisKey)
-        console.log(`successfully found Redis key: ${redisKey}`)
-        res.status(200)
-        return value
-      }
+      // if (exists === 1) {
+      //   const value = await redisClient.get(redisKey)
+      //   console.log(`successfully found Redis key: ${redisKey}`)
+      //   res.status(200)
+      //   return value
+      // }
 
       const gres = await uniprot2Goa(ures.ids, req)
 
@@ -202,8 +269,8 @@ const geneGoaHandler = async (req, res) => {
             return r.response
           }),
         }
-        await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
-        console.log(`successfully set Redis key: ${redisKey}`)
+        // await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
+        // console.log(`successfully set Redis key: ${redisKey}`)
         return data
       }
       // All of them are error responses
