@@ -26,6 +26,7 @@ const gene = async event => {
   res.set("Content-Type", "application/vnd.api+json")
   try {
     if (result.matched) {
+      // need to add redis check here
       return await result.fn(req, res)
     }
     return utils.errMessage(404, "no match for route", path)

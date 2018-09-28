@@ -1,5 +1,20 @@
+const Redis = require("ioredis")
 const fetch = require("node-fetch")
 const utils = require("./utils")
+
+/**
+ * Instantiate Redis client from env variable
+ */
+const redisClient = new Redis(
+  process.env.REDIS_MASTER_SERVICE_PORT,
+  process.env.REDIS_MASTER_SERVICE_HOST,
+)
+redisClient.on("connect", () => {
+  console.log("Redis client connected")
+})
+redisClient.on("error", err => {
+  console.log(`Something went wrong starting the Redis client: ${err}`)
+})
 
 const makeUniprotURL = id => {
   return `https://www.uniprot.org/uniprot?query=gene:${id}&columns=id&format=list`
@@ -121,9 +136,7 @@ const geneId2Uniprot = async id => {
 
 const uniprot2Goa = async ids => {
   const allGoaRes = ids.map(async v => {
-    const goares = await fetch(makeGoaURL(v), {
-      headers: { Accept: "application/json" },
-    })
+    const goares = await fetch(makeGoaURL(v), { headers: { Accept: "application/json" } })
     const resp = new Response()
     if (goares.ok) {
       const json = await goares.json()
@@ -151,27 +164,30 @@ const geneHandler = (req, res) => {
         subgroup: ["goa"],
         version: 2,
       },
-      relationships: {
-        goa: {
-          links: {
-            related: utils.getGoaURL(req),
-          },
-        },
-      },
+      relationships: { goa: { links: { related: utils.getGoaURL(req) } } },
     },
-    links: {
-      self: utils.getOriginalURL(req),
-    },
+    links: { self: utils.getOriginalURL(req) },
   })
 }
 
 const geneGoaHandler = async (req, res) => {
-  const orgURL = req.get("original-uri")
+  const orgURL = req.get("x-original-uri")
+  const redisKey = `${req.params[0]}-${orgURL}`
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
+      const exists = await redisClient.exists(redisKey)
+
+      if (exists === 1) {
+        const value = await redisClient.get(redisKey)
+        console.log(`successfully found Redis key: ${redisKey}`)
+        res.status(200)
+        return value
+      }
+
       const gres = await uniprot2Goa(ures.ids, req)
-      // No of error responses
+
+      // Number of error responses
       const errCount = gres.reduce((acc, curr) => {
         if (curr.isError()) {
           return acc + 1
@@ -180,12 +196,15 @@ const geneGoaHandler = async (req, res) => {
       }, 0)
       // No error
       if (errCount === 0) {
-        return {
+        const data = {
           links: { self: utils.getOriginalURL(req) },
           data: gres.map(r => {
             return r.response
           }),
         }
+        await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
+        console.log(`successfully set Redis key: ${redisKey}`)
+        return data
       }
       // All of them are error responses
       if (gres.length === errCount) {
@@ -196,10 +215,13 @@ const geneGoaHandler = async (req, res) => {
       const succRes = gres.find(r => {
         return r.isSuccess()
       })
-      return {
+      const data = {
         links: { self: utils.getOriginalURL(req) },
         data: succRes.response,
       }
+      await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
+      console.log(`successfully set ${data}`)
+      return data
     }
     res.status(ures.error.status)
     return utils.errMessage(ures.error.status, ures.message, orgURL)

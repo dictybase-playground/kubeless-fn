@@ -9,6 +9,7 @@
   "author": "Siddhartha Basu",
   "license": "ISC",
   "dependencies": {
+    "ioredis": "^4.0.0",
     "node-fetch": "^2.2.0"
   },
   "devDependencies": {
