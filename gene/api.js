@@ -64,34 +64,30 @@ const gene2name = async id => {
   }
 }
 
-// Why does this always return {}?
-// Could be due to the nested arrays...
-// Due to async, function always returns a promise
-// Here, we explicitly return Promise.all for all items of mapped array
-const convertExtensions = async ext => {
-  if (ext === null) {
-    return null
-  }
-  const extRes = ext.map(async item => {
-    item.connectedXrefs.map(async xref => {
-      if (xref.db === "DDB") {
-        const name = await gene2name(xref.id)
-        const response = {
-          db: xref.db,
-          id: xref.id,
-          relation: xref.relation,
-          name: name.data.attributes.geneName,
-        }
-        console.log("response: ", response)
-        return Promise.resolve(response)
-      }
-      console.log("xref: ", xref)
-      return Promise.resolve(xref)
-    })
-  })
-  const allRes = await Promise.all(extRes)
-  return allRes
-}
+// const convertExtensions = ext => {
+//   if (ext === null) {
+//     return null
+//   }
+//   return ext.map(async item => {
+//     await Promise.all(
+//       item.connectedXrefs.map(async xref => {
+//         if (xref.db === "DDB") {
+//           const name = await gene2name(xref.id)
+//           const response = {
+//             db: xref.db,
+//             id: xref.id,
+//             relation: xref.relation,
+//             name: name.data.attributes.geneName,
+//           }
+//           console.log("response: ", response)
+//           return Promise.resolve(response)
+//         }
+//         // console.log("xref: ", xref)
+//         // return Promise.resolve(xref)
+//       }),
+//     )
+//   })
+// }
 
 const normalizeGoa = goaResp => {
   if (goaResp.numberOfHits === 0) {
@@ -108,7 +104,7 @@ const normalizeGoa = goaResp => {
         qualifier: r.qualifier,
         publication: r.reference,
         with: r.withFrom,
-        extensions: convertExtensions(r.extensions),
+        extensions: r.extensions,
         assigned_by: r.assignedBy,
       },
     }
@@ -207,7 +203,41 @@ const uniprot2Goa = async ids => {
     const resp = new Response()
     if (goares.ok) {
       const json = await goares.json()
-      resp.response = normalizeGoa(json)
+      // resp.response = normalizeGoa(json)
+      const normalizedRes = normalizeGoa(json)
+      const freshArr = []
+      // eslint-disable-next-line
+      for (const i of normalizedRes) {
+        const nextArr = []
+        if (i.attributes.extensions !== null) {
+          // eslint-disable-next-line
+          for (const j of i.attributes.extensions) {
+            const extArr = []
+            // eslint-disable-next-line
+            for (const k of j.connectedXrefs) {
+              if (k.db === "DDB") {
+                // eslint-disable-next-line
+                const name = await gene2name(k.id)
+                const response = {
+                  db: k.db,
+                  id: k.id,
+                  relation: k.relation,
+                  name: name.data.attributes.geneName,
+                }
+                extArr.push(response)
+              }
+            }
+
+            console.log("ext: ", extArr)
+          }
+        } else if (i.attributes.extensions === null) {
+          freshArr.push(i)
+        }
+
+        // console.log(freshArr)
+      }
+      // console.log(normalizedRes)
+      resp.response = freshArr
       resp.success = true
     } else {
       const errjson = await goares.json()
