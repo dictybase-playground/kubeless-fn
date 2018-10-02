@@ -1,6 +1,9 @@
 const Redis = require("ioredis")
 const fetch = require("node-fetch")
 const utils = require("./utils")
+const { gene2name } = require("./gene2name")
+const { go2name } = require("./go2name")
+const { uniprot2name } = require("./uniprot2name")
 
 /**
  * Instantiate Redis client from env variable
@@ -25,180 +28,6 @@ const makeGoaURL = id => {
   const query = "includeFields=goName&limit=100&geneProductId="
   return `${base}${query}${id}`
 }
-
-// converts gene ID to name using Redis cache
-const gene2name = async id => {
-  const hash = "GENE2NAME/geneids"
-  try {
-    const exists = await redisClient.hexists(hash, id)
-
-    if (exists === 1) {
-      const value = await redisClient.hget(hash, id)
-      console.log(`successfully found geneId ${id} and geneName ${value}`)
-      return {
-        data: {
-          type: "genes",
-          id,
-          attributes: {
-            geneName: value,
-            geneId: id,
-          },
-        },
-      }
-    }
-
-    console.log("geneid doesn't exist")
-    return {
-      status: 404,
-      title: "no match for route",
-      detail: "no match for route",
-      meta: { creator: "kubeless function api" },
-    }
-  } catch (error) {
-    return {
-      status: 500,
-      title: error.message,
-      detail: error.message,
-      meta: { creator: "kubeless function api" },
-    }
-  }
-}
-
-const makeGoURL = id => {
-  return `https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/${id}`
-}
-
-const goName2Id = async id => {
-  const hash = "GO2NAME/goids"
-  try {
-    const res = await fetch(makeGoURL(id))
-    const json = await res.json()
-
-    if (res.ok) {
-      await redisClient.hset(hash, json.results[0].id, json.results[0].name)
-      console.log(`Successfully set ${json.results[0].id}:${json.results[0].name} in hash ${hash}`)
-      return {
-        data: {
-          type: "goa",
-          id: json.results[0].id,
-          attributes: {
-            goId: json.results[0].id,
-            goName: json.results[0].name,
-          },
-        },
-      }
-    }
-
-    return {
-      status: 404,
-      title: json.messages[0],
-      detail: json.messages[0],
-      meta: { creator: "kubeless function api" },
-    }
-  } catch (error) {
-    return {
-      status: 500,
-      title: error.message,
-      detail: error.message,
-      meta: { creator: "kubeless function api" },
-    }
-  }
-}
-
-const go2name = async id => {
-  const hash = "GO2NAME/goids"
-
-  try {
-    const exists = await redisClient.hexists(hash, id)
-
-    if (exists === 1) {
-      const value = await redisClient.hget(hash, id)
-      console.log(`successfully found goId ${id} and goName ${value}`)
-      return {
-        data: {
-          type: "goa",
-          id,
-          attributes: {
-            goName: value,
-            goId: id,
-          },
-        },
-      }
-    }
-
-    return goName2Id(id)
-  } catch (error) {
-    return {
-      status: 500,
-      title: error.message,
-      detail: error.message,
-      meta: { creator: "kubeless function api" },
-    }
-  }
-}
-
-const uniprot2name = async id => {
-  const hash = "UNIPROT2NAME/uniprot"
-
-  try {
-    const exists = await redisClient.hexists(hash, id)
-
-    if (exists === 1) {
-      const value = await redisClient.hget(hash, id)
-      console.log(`successfully found uniprotId ${id} and geneName ${value}`)
-      return {
-        data: {
-          type: "genes",
-          id,
-          attributes: {
-            uniprotId: id,
-            geneName: value,
-          },
-        },
-      }
-    }
-
-    console.log("uniprotId doesn't exist")
-    return {
-      status: 404,
-      title: "no match for route",
-      detail: "no match for route",
-      meta: { creator: "kubeless function api" },
-    }
-  } catch (error) {
-    return {
-      status: 500,
-      title: error.message,
-      detail: error.message,
-      meta: { creator: "kubeless function api" },
-    }
-  }
-}
-
-// const convertExtensions = ext => {
-//   if (ext === null) {
-//     return null
-//   }
-//   return ext.map(async item => {
-//     await Promise.all(
-//       item.connectedXrefs.map(async xref => {
-//         if (xref.db === "DDB") {
-//           const name = await gene2name(xref.id)
-//           const response = {
-//             db: xref.db,
-//             id: xref.id,
-//             relation: xref.relation,
-//             name: name.data.attributes.geneName,
-//           }
-//           console.log("response: ", response)
-//           return Promise.resolve(response)
-//         }
-//         // console.log("xref: ", xref)
-//         // return Promise.resolve(xref)
-//       }),
-//     )
-//   })
-// }
 
 const normalizeGoa = goaResp => {
   if (goaResp.numberOfHits === 0) {
@@ -418,14 +247,14 @@ const geneGoaHandler = async (req, res) => {
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
-      // const exists = await redisClient.exists(redisKey)
+      const exists = await redisClient.exists(redisKey)
 
-      // if (exists === 1) {
-      //   const value = await redisClient.get(redisKey)
-      //   console.log(`successfully found Redis key: ${redisKey}`)
-      //   res.status(200)
-      //   return value
-      // }
+      if (exists === 1) {
+        const value = await redisClient.get(redisKey)
+        console.log(`successfully found Redis key: ${redisKey}`)
+        res.status(200)
+        return value
+      }
 
       const gres = await uniprot2Goa(ures.ids, req)
 
@@ -444,8 +273,8 @@ const geneGoaHandler = async (req, res) => {
             return r.response
           }),
         }
-        // await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
-        // console.log(`successfully set Redis key: ${redisKey}`)
+        await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
+        console.log(`successfully set Redis key: ${redisKey}`)
         return data
       }
       // All of them are error responses
@@ -476,4 +305,5 @@ const geneGoaHandler = async (req, res) => {
 module.exports = {
   geneHandler,
   geneGoaHandler,
+  redisClient,
 }
