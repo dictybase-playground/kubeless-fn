@@ -1,4 +1,18 @@
-const { redisClient } = require("./api")
+const Redis = require("ioredis")
+
+/**
+ * Instantiate Redis client from env variable
+ */
+const redisClient = new Redis(
+  process.env.REDIS_MASTER_SERVICE_PORT,
+  process.env.REDIS_MASTER_SERVICE_HOST,
+)
+redisClient.on("connect", () => {
+  console.log("Redis client connected")
+})
+redisClient.on("error", err => {
+  console.log(`Something went wrong starting the Redis client: ${err}`)
+})
 
 const uniprot2name = async id => {
   const hash = "UNIPROT2NAME/uniprot"

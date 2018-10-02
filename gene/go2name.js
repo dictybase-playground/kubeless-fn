@@ -1,5 +1,20 @@
+const Redis = require("ioredis")
 const fetch = require("node-fetch")
-const { redisClient } = require("./api")
+// const { redisClient } = require("./api")
+
+/**
+ * Instantiate Redis client from env variable
+ */
+const redisClient = new Redis(
+  process.env.REDIS_MASTER_SERVICE_PORT,
+  process.env.REDIS_MASTER_SERVICE_HOST,
+)
+redisClient.on("connect", () => {
+  console.log("Redis client connected")
+})
+redisClient.on("error", err => {
+  console.log(`Something went wrong starting the Redis client: ${err}`)
+})
 
 const makeGoURL = id => {
   return `https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/${id}`

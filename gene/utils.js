@@ -1,13 +1,9 @@
 const getOriginalURL = req => {
-  return `${req.get("x-forwarded-proto")}://${req.hostname}${req.get(
-    "x-original-uri",
-  )}`
+  return `${req.get("x-forwarded-proto")}://${req.hostname}${req.get("x-original-uri")}`
 }
 
 const getGoaURL = req => {
-  return `${req.get("x-forwarded-proto")}://${req.hostname}/genes/${
-    req.params[0]
-  }/goas`
+  return `${req.get("x-forwarded-proto")}://${req.hostname}/genes/${req.params[0]}/goas`
 }
 
 const errMessage = (code, msg, url) => {
@@ -15,12 +11,8 @@ const errMessage = (code, msg, url) => {
     status: code,
     title: msg,
     detail: msg,
-    source: {
-      pointer: url,
-    },
-    meta: {
-      creator: "kubeless function api",
-    },
+    source: { pointer: url },
+    meta: { creator: "kubeless function api" },
   }
 }
 
