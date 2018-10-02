@@ -325,38 +325,51 @@ const uniprot2Goa = async ids => {
           for (const j of i.attributes.extensions) {
             // eslint-disable-next-line
             for (const k of j.connectedXrefs) {
-              if (k.db === "DDB") {
-                // eslint-disable-next-line
-                const name = await gene2name(k.id)
-                const response = {
-                  db: k.db,
-                  id: k.id,
-                  relation: k.relation,
-                  name: name.data.attributes.geneName,
+              switch (k.db) {
+                case "DDB": {
+                  // eslint-disable-next-line
+                  const name = await gene2name(k.id)
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                    relation: k.relation,
+                    name: name.data.attributes.geneName,
+                  }
+                  extArr.push(response)
+                  break
                 }
-                extArr.push(response)
-              }
-              if (k.db === "GO") {
-                // eslint-disable-next-line
-                const name = await go2name(`${k.db}:${k.id}`)
-                const response = {
-                  db: k.db,
-                  id: k.id,
-                  relation: k.relation,
-                  name: name.data.attributes.goName,
+                case "GO": {
+                  // eslint-disable-next-line
+                  const name = await go2name(`${k.db}:${k.id}`)
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                    relation: k.relation,
+                    name: name.data.attributes.goName,
+                  }
+                  extArr.push(response)
+                  break
                 }
-                extArr.push(response)
-              }
-              if (k.db === "UniProtKB") {
-                // eslint-disable-next-line
-                const name = await uniprot2name(k.id)
-                const response = {
-                  db: k.db,
-                  id: k.id,
-                  relation: k.relation,
-                  name: name.data.attributes.geneName,
+                case "UniProtKB": {
+                  // eslint-disable-next-line
+                  const name = await uniprot2name(k.id)
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                    relation: k.relation,
+                    name: name.data.attributes.geneName,
+                  }
+                  extArr.push(response)
+                  break
                 }
-                extArr.push(response)
+                default: {
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                    relation: k.relation,
+                  }
+                  extArr.push(response)
+                }
               }
             }
           }
