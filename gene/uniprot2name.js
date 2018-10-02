@@ -37,10 +37,14 @@ const uniprot2name = async id => {
 
     console.log("uniprotId doesn't exist")
     return {
-      status: 404,
-      title: "no match for route",
-      detail: "no match for route",
-      meta: { creator: "kubeless function api" },
+      data: {
+        type: "genes",
+        id,
+        attributes: {
+          uniprotId: id,
+          geneName: id,
+        },
+      },
     }
   } catch (error) {
     return {
