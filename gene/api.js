@@ -137,6 +137,44 @@ const go2name = async id => {
   }
 }
 
+const uniprot2name = async id => {
+  const hash = "UNIPROT2NAME/uniprot"
+
+  try {
+    const exists = await redisClient.hexists(hash, id)
+
+    if (exists === 1) {
+      const value = await redisClient.hget(hash, id)
+      console.log(`successfully found uniprotId ${id} and geneName ${value}`)
+      return {
+        data: {
+          type: "genes",
+          id,
+          attributes: {
+            uniprotId: id,
+            geneName: value,
+          },
+        },
+      }
+    }
+
+    console.log("uniprotId doesn't exist")
+    return {
+      status: 404,
+      title: "no match for route",
+      detail: "no match for route",
+      meta: { creator: "kubeless function api" },
+    }
+  } catch (error) {
+    return {
+      status: 500,
+      title: error.message,
+      detail: error.message,
+      meta: { creator: "kubeless function api" },
+    }
+  }
+}
+
 // const convertExtensions = ext => {
 //   if (ext === null) {
 //     return null
@@ -300,14 +338,23 @@ const uniprot2Goa = async ids => {
               }
               if (k.db === "GO") {
                 // eslint-disable-next-line
-                console.log("id: ", k.id)
                 const name = await go2name(`${k.db}:${k.id}`)
-                console.log("name: ", name)
                 const response = {
                   db: k.db,
                   id: k.id,
                   relation: k.relation,
                   name: name.data.attributes.goName,
+                }
+                extArr.push(response)
+              }
+              if (k.db === "UniProtKB") {
+                // eslint-disable-next-line
+                const name = await uniprot2name(k.id)
+                const response = {
+                  db: k.db,
+                  id: k.id,
+                  relation: k.relation,
+                  name: name.data.attributes.geneName,
                 }
                 extArr.push(response)
               }
