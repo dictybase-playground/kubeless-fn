@@ -203,16 +203,15 @@ const uniprot2Goa = async ids => {
     const resp = new Response()
     if (goares.ok) {
       const json = await goares.json()
-      // resp.response = normalizeGoa(json)
       const normalizedRes = normalizeGoa(json)
       const freshArr = []
       // eslint-disable-next-line
       for (const i of normalizedRes) {
-        const nextArr = []
         if (i.attributes.extensions !== null) {
           // eslint-disable-next-line
+          const extArr = []
+          // eslint-disable-next-line
           for (const j of i.attributes.extensions) {
-            const extArr = []
             // eslint-disable-next-line
             for (const k of j.connectedXrefs) {
               if (k.db === "DDB") {
@@ -227,16 +226,14 @@ const uniprot2Goa = async ids => {
                 extArr.push(response)
               }
             }
-
-            console.log("ext: ", extArr)
           }
+          i.attributes.extensions.pop()
+          i.attributes.extensions = extArr
+          freshArr.push(i)
         } else if (i.attributes.extensions === null) {
           freshArr.push(i)
         }
-
-        // console.log(freshArr)
       }
-      // console.log(normalizedRes)
       resp.response = freshArr
       resp.success = true
     } else {
