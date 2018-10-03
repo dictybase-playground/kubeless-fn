@@ -241,8 +241,6 @@ const uniprot2Goa = async ids => {
                   // eslint-disable-next-line
                   const name = await uniprot2name(k.id)
                   let response
-                  console.log("name: ", name.data.attributes.geneName)
-                  console.log("id: ", k.id)
                   // if the gene name and ID are identical,
                   // no need to return name as a separate key
                   if (name.data.attributes.geneName === k.id) {
