@@ -207,7 +207,65 @@ const uniprot2Goa = async ids => {
           // replace with new data array
           i.attributes.extensions = extArr
           freshArr.push(i)
+        } else if (i.attributes.with !== null) {
+          // eslint-disable-next-line
+          const withArr = []
+          // eslint-disable-next-line
+          for (const j of i.attributes.with) {
+            // eslint-disable-next-line
+            for (const k of j.connectedXrefs) {
+              switch (k.db) {
+                case "DDB": {
+                  // eslint-disable-next-line
+                  const name = await gene2name(k.id)
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                    name: name.data.attributes.geneName,
+                  }
+                  withArr.push(response)
+                  break
+                }
+                case "GO": {
+                  // eslint-disable-next-line
+                  const name = await go2name(`${k.db}:${k.id}`)
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                    name: name.data.attributes.goName,
+                  }
+                  withArr.push(response)
+                  break
+                }
+                case "UniProtKB": {
+                  // eslint-disable-next-line
+                  const name = await uniprot2name(k.id)
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                    name: name.data.attributes.geneName,
+                  }
+                  withArr.push(response)
+                  break
+                }
+                default: {
+                  const response = {
+                    db: k.db,
+                    id: k.id,
+                  }
+                  withArr.push(response)
+                }
+              }
+            }
+          }
+          // remove old With data
+          i.attributes.with.pop()
+          // replace with new data array
+          i.attributes.with = withArr
+          freshArr.push(i)
         } else if (i.attributes.extensions === null) {
+          freshArr.push(i)
+        } else if (i.attributes.with === null) {
           freshArr.push(i)
         }
       }
