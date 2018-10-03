@@ -215,7 +215,7 @@ const uniprot2Goa = async ids => {
             // eslint-disable-next-line
             for (const k of j.connectedXrefs) {
               switch (k.db) {
-                case "DDB": {
+                case "dictyBase": {
                   // eslint-disable-next-line
                   const name = await gene2name(k.id)
                   const response = {
@@ -237,17 +237,21 @@ const uniprot2Goa = async ids => {
                   withArr.push(response)
                   break
                 }
-                case "UniProtKB": {
-                  // eslint-disable-next-line
-                  const name = await uniprot2name(k.id)
-                  const response = {
-                    db: k.db,
-                    id: k.id,
-                    name: name.data.attributes.geneName,
-                  }
-                  withArr.push(response)
-                  break
-                }
+                // This is commented out because it needs a new data source
+                // We don't have mappings for all of UniProtKB to gene name
+                // We only have those in the dicty.txt file
+
+                // case "UniProtKB": {
+                //   // eslint-disable-next-line
+                //   const name = await uniprot2name(k.id)
+                //   const response = {
+                //     db: k.db,
+                //     id: k.id,
+                //     name: name.data.attributes.geneName,
+                //   }
+                //   withArr.push(response)
+                //   break
+                // }
                 default: {
                   const response = {
                     db: k.db,
@@ -305,14 +309,14 @@ const geneGoaHandler = async (req, res) => {
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
-      const exists = await redisClient.exists(redisKey)
+      // const exists = await redisClient.exists(redisKey)
 
-      if (exists === 1) {
-        const value = await redisClient.get(redisKey)
-        console.log(`successfully found Redis key: ${redisKey}`)
-        res.status(200)
-        return value
-      }
+      // if (exists === 1) {
+      //   const value = await redisClient.get(redisKey)
+      //   console.log(`successfully found Redis key: ${redisKey}`)
+      //   res.status(200)
+      //   return value
+      // }
 
       const gres = await uniprot2Goa(ures.ids, req)
 
