@@ -282,13 +282,16 @@ const uniprot2Goa = async ids => {
 }
 
 // handlers
-const geneHandler = (req, res) => {
+const geneHandler = async (req, res) => {
+  const name = await gene2name(req.params[0])
   res.status(200)
+
   return Promise.resolve({
     data: {
       type: "genes",
       id: req.params[0],
       attributes: {
+        geneName: name.data.attributes.geneName,
         group: ["goa"],
         subgroup: ["goa"],
         version: 2,
