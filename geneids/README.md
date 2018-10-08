@@ -43,10 +43,10 @@ This file specifies the file location in the object storage.
 
 ## Deploy
 
-- deploy the cachefn function
+- deploy the genecachefn function
 
   > `$_> kubeless function deploy \`  
-  > `cachefn --runtime nodejs8 --from-file handler.js --handler handler.file2redis`  
+  > `genecachefn --runtime nodejs8 --from-file handler.js --handler handler.file2redis`  
   > `--dependencies package.json --namespace dictybase -e MINIO_ACCESS_KEY=YOUR_KEY -e MINIO_SECRET_KEY=YOUR_KEY`
 
 <em>Note: you also need to ensure `REDIS_MASTER_SERVICE_HOST`, `REDIS_MASTER_SERVICE_PORT`, `MINIO_SERVICE_HOST` and `MINIO_SERVICE_PORT` are set as well.</em>
@@ -57,33 +57,14 @@ This file specifies the file location in the object storage.
 
 - to update the function, use:
   > `$_> kubeless function update \`  
-  > `cachefn --runtime nodejs8 --from-file handler.js --handler handler.file2redis`  
+  > `genecachefn --runtime nodejs8 --from-file handler.js --handler handler.file2redis`  
   > `--dependencies package.json --namespace dictybase`
 
 ## Add a http trigger to create an ingress
 
-> `$_> kubeless trigger http create cachefn \`  
-> `--function-name cachefn --hostname betafunc.dictybase.local \`  
-> `--tls-secret dictybase-local-tls --namespace dictybase --path goa/cache`
-
-The above command assumes a presence of tls secret`(dictybase-local-tls)` and mapping
-to the host`(betafunc.dictybase.local)`.
-
-## Deploy
-
-- deploy the gene2namefn function
-
-  > `$_> kubeless function deploy \`  
-  > `gene2namefn --runtime nodejs8 --from-file handler.js --handler handler.gene2name`  
-  > `--dependencies package.json --namespace dictybase`
-
-<em>Note: you also need to ensure `REDIS_MASTER_SERVICE_HOST` and `REDIS_MASTER_SERVICE_PORT` are set as well.</em>
-
-## Add a http trigger to create an ingress
-
-> `$_> kubeless trigger http create gene2namefn \`  
-> `--function-name gene2namefn --hostname betafunc.dictybase.local \`  
-> `--tls-secret dictybase-local-tls --namespace dictybase --path goa/converter`
+> `$_> kubeless trigger http create genecachefn \`  
+> `--function-name genecachefn --hostname betafunc.dictybase.local \`  
+> `--tls-secret dictybase-local-tls --namespace dictybase --path geneids/cache`
 
 The above command assumes a presence of tls secret`(dictybase-local-tls)` and mapping
 to the host`(betafunc.dictybase.local)`.
@@ -93,26 +74,9 @@ to the host`(betafunc.dictybase.local)`.
 It will available through the mapped host, for example through
 `betafunc.dictybase.local` assuming the above function.
 
-**POST** `/goa/cache` - Stores gene ID and name as key-value pairs in Redis cache.
+**POST** `/geneids/cache` - Stores gene ID and name as key-value pairs in Redis cache.
 It will use `metadata.json` file to download the gff3 file from object storage and
 persist the information in redis cache. An example `HTTP` request to this endpoint
 will look like this.
 
-> `$_> curl -k -X POST https://betafunc.dictybase.local/goa/cache -H 'Content-Type: application/json' -d @metadata.json`
-
-**GET** `/goa/converter/{gene_id}` - Gets the gene name for a given gene ID.
-
-> `$_> curl -k https://betafunc.dictybase.local/goa/converter/DDB_G0288511`
-
-```json
-{
-  "data": {
-    "type": "genes",
-    "id": "DDB_G0288511",
-    "attributes": {
-      "geneName": "sadA",
-      "geneId": "DDB_G0288511"
-    }
-  }
-}
-```
+> `$_> curl -k -X POST https://betafunc.dictybase.local/geneids/cache -H 'Content-Type: application/json' -d @metadata.json`

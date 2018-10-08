@@ -2,6 +2,8 @@
 
 A Node.js based [kubeless](https://kubeless.io) function to deploy in kubernetes cluster.
 
+**Important:** This function does not need to be deployed at this time. This readme is just here as a reference point.
+
 ## Dependencies
 
 [Redis](https://redis.io) must be installed for the function to work. The instructions are given
