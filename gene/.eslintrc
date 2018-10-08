@@ -1,12 +1,14 @@
 {
-    "extends": "airbnb-base",
-    "rules": {
-        "quotes": ["error","double"],
-        "semi": ["error","never"],
-        "no-console": ["error", {"allow": ["log"]}],
-        "arrow-body-style": ["error","always"],
-        "arrow-parens": ["error","as-needed"],
-        "class-methods-use-this": ["error", { "exceptMethods": ["_write"]}],
-        "object-curly-newline": ["error", { "multiline": true }]
-    }
+  "extends": "airbnb-base",
+  "rules": {
+    "quotes": ["error", "double"],
+    "semi": ["error", "never"],
+    "no-console": ["error", { "allow": ["log"] }],
+    "arrow-body-style": ["error", "always"],
+    "arrow-parens": ["error", "as-needed"],
+    "class-methods-use-this": ["error", { "exceptMethods": ["_write"] }],
+    "object-curly-newline": ["error", { "multiline": true }],
+    "no-await-in-loop": "off",
+    "no-restricted-syntax": "off"
+  }
 }

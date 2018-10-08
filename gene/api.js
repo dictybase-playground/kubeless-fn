@@ -145,18 +145,13 @@ const uniprot2Goa = async ids => {
       const json = await goares.json()
       const normalizedRes = normalizeGoa(json)
       const freshArr = []
-      // eslint-disable-next-line
       for (const i of normalizedRes) {
         if (i.attributes.extensions !== null) {
-          // eslint-disable-next-line
           const extArr = []
-          // eslint-disable-next-line
           for (const j of i.attributes.extensions) {
-            // eslint-disable-next-line
             for (const k of j.connectedXrefs) {
               switch (k.db) {
                 case "DDB": {
-                  // eslint-disable-next-line
                   const name = await gene2name(k.id)
                   const response = {
                     db: k.db,
@@ -168,7 +163,6 @@ const uniprot2Goa = async ids => {
                   break
                 }
                 case "GO": {
-                  // eslint-disable-next-line
                   const name = await go2name(`${k.db}:${k.id}`)
                   const response = {
                     db: k.db,
@@ -180,7 +174,6 @@ const uniprot2Goa = async ids => {
                   break
                 }
                 case "UniProtKB": {
-                  // eslint-disable-next-line
                   const name = await uniprot2name(k.id)
                   const response = {
                     db: k.db,
@@ -209,15 +202,11 @@ const uniprot2Goa = async ids => {
           freshArr.push(i)
         }
         // else if (i.attributes.with !== null) {
-        //   // eslint-disable-next-line
         //   const withArr = []
-        //   // eslint-disable-next-line
         //   for (const j of i.attributes.with) {
-        //     // eslint-disable-next-line
         //     for (const k of j.connectedXrefs) {
         //       switch (k.db) {
         //         case "dictyBase": {
-        //           // eslint-disable-next-line
         //           const name = await gene2name(k.id)
         //           const response = {
         //             db: k.db,
@@ -228,7 +217,6 @@ const uniprot2Goa = async ids => {
         //           break
         //         }
         //         case "GO": {
-        //           // eslint-disable-next-line
         //           const name = await go2name(`${k.db}:${k.id}`)
         //           const response = {
         //             db: k.db,
@@ -239,7 +227,6 @@ const uniprot2Goa = async ids => {
         //           break
         //         }
         //         case "UniProtKB": {
-        //           // eslint-disable-next-line
         //           const name = await uniprot2name(k.id)
         //           let response
         //           // if the gene name and ID are identical,
