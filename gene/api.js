@@ -1,23 +1,8 @@
-const Redis = require("ioredis")
 const fetch = require("node-fetch")
 const utils = require("./utils")
 const { gene2name } = require("./gene2name")
 const { go2name } = require("./go2name")
 const { uniprot2name } = require("./uniprot2name")
-
-/**
- * Instantiate Redis client from env variable
- */
-const redisClient = new Redis(
-  process.env.REDIS_MASTER_SERVICE_PORT,
-  process.env.REDIS_MASTER_SERVICE_HOST,
-)
-redisClient.on("connect", () => {
-  console.log("Redis client connected")
-})
-redisClient.on("error", err => {
-  console.log(`Something went wrong starting the Redis client: ${err}`)
-})
 
 const makeUniprotURL = id => {
   return `https://www.uniprot.org/uniprot?query=gene:${id}&columns=id&format=list`
@@ -137,7 +122,7 @@ const geneId2Uniprot = async id => {
   return ures
 }
 
-const uniprot2Goa = async ids => {
+const uniprot2Goa = async (ids, req, redisClient) => {
   const allGoaRes = ids.map(async v => {
     const goares = await fetch(makeGoaURL(v), { headers: { Accept: "application/json" } })
     const resp = new Response()
@@ -152,7 +137,7 @@ const uniprot2Goa = async ids => {
             for (const k of j.connectedXrefs) {
               switch (k.db) {
                 case "DDB": {
-                  const name = await gene2name(k.id)
+                  const name = await gene2name(k.id, redisClient)
                   const response = {
                     db: k.db,
                     id: k.id,
@@ -163,7 +148,7 @@ const uniprot2Goa = async ids => {
                   break
                 }
                 case "GO": {
-                  const name = await go2name(`${k.db}:${k.id}`)
+                  const name = await go2name(`${k.db}:${k.id}`, redisClient)
                   const response = {
                     db: k.db,
                     id: k.id,
@@ -174,7 +159,7 @@ const uniprot2Goa = async ids => {
                   break
                 }
                 case "UniProtKB": {
-                  const name = await uniprot2name(k.id)
+                  const name = await uniprot2name(k.id, redisClient)
                   const response = {
                     db: k.db,
                     id: k.id,
@@ -200,74 +185,9 @@ const uniprot2Goa = async ids => {
           // replace with new data array
           i.attributes.extensions = extArr
           freshArr.push(i)
-        }
-        // else if (i.attributes.with !== null) {
-        //   const withArr = []
-        //   for (const j of i.attributes.with) {
-        //     for (const k of j.connectedXrefs) {
-        //       switch (k.db) {
-        //         case "dictyBase": {
-        //           const name = await gene2name(k.id)
-        //           const response = {
-        //             db: k.db,
-        //             id: k.id,
-        //             name: name.data.attributes.geneName,
-        //           }
-        //           withArr.push(response)
-        //           break
-        //         }
-        //         case "GO": {
-        //           const name = await go2name(`${k.db}:${k.id}`)
-        //           const response = {
-        //             db: k.db,
-        //             id: k.id,
-        //             name: name.data.attributes.goName,
-        //           }
-        //           withArr.push(response)
-        //           break
-        //         }
-        //         case "UniProtKB": {
-        //           const name = await uniprot2name(k.id)
-        //           let response
-        //           // if the gene name and ID are identical,
-        //           // no need to return name as a separate key
-        //           if (name.data.attributes.geneName === k.id) {
-        //             response = {
-        //               db: k.db,
-        //               id: k.id,
-        //             }
-        //           } else {
-        //             response = {
-        //               db: k.db,
-        //               id: k.id,
-        //               name: name.data.attributes.geneName,
-        //             }
-        //           }
-        //           withArr.push(response)
-        //           break
-        //         }
-        //         default: {
-        //           const response = {
-        //             db: k.db,
-        //             id: k.id,
-        //           }
-        //           withArr.push(response)
-        //         }
-        //       }
-        //     }
-        //   }
-        //   // remove old With data
-        //   i.attributes.with.pop()
-        //   // replace with new data array
-        //   i.attributes.with = withArr
-        //   freshArr.push(i)
-        // }
-        else if (i.attributes.extensions === null) {
+        } else if (i.attributes.extensions === null) {
           freshArr.push(i)
         }
-        // else if (i.attributes.with === null) {
-        //   freshArr.push(i)
-        // }
       }
       resp.response = freshArr
       resp.success = true
@@ -282,42 +202,56 @@ const uniprot2Goa = async ids => {
 }
 
 // handlers
-const geneHandler = async (req, res) => {
-  const name = await gene2name(req.params[0])
-  res.status(200)
+const geneHandler = async (req, res, redisClient) => {
+  try {
+    const name = await gene2name(req.params[0], redisClient)
 
-  return Promise.resolve({
-    data: {
-      type: "genes",
-      id: req.params[0],
-      attributes: {
-        geneName: name.data.attributes.geneName,
-        group: ["goa"],
-        subgroup: ["goa"],
-        version: 2,
+    if (name.data) {
+      res.status(200)
+
+      return Promise.resolve({
+        data: {
+          type: "genes",
+          id: req.params[0],
+          attributes: {
+            geneName: name.data.attributes.geneName,
+            group: ["goa"],
+            subgroup: ["goa"],
+            version: 2,
+          },
+          relationships: { goa: { links: { related: utils.getGoaURL(req) } } },
+        },
+        links: { self: utils.getOriginalURL(req) },
+      })
+    }
+    res.status(200)
+    return Promise.resolve({
+      data: {
+        type: "genes",
+        id: req.params[0],
+        attributes: {
+          geneName: req.params[0],
+          group: ["goa"],
+          subgroup: ["goa"],
+          version: 2,
+        },
+        relationships: { goa: { links: { related: utils.getGoaURL(req) } } },
       },
-      relationships: { goa: { links: { related: utils.getGoaURL(req) } } },
-    },
-    links: { self: utils.getOriginalURL(req) },
-  })
+      links: { self: utils.getOriginalURL(req) },
+    })
+  } catch (error) {
+    res.status(500)
+    return utils.errMessage(500, error.message, req.get("x-original-uri"))
+  }
 }
 
-const geneGoaHandler = async (req, res) => {
+const geneGoaHandler = async (req, res, redisClient) => {
   const orgURL = req.get("x-original-uri")
   const redisKey = `${req.params[0]}-${orgURL}`
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
-      const exists = await redisClient.exists(redisKey)
-
-      if (exists === 1) {
-        const value = await redisClient.get(redisKey)
-        console.log(`successfully found Redis key: ${redisKey}`)
-        res.status(200)
-        return value
-      }
-
-      const gres = await uniprot2Goa(ures.ids, req)
+      const gres = await uniprot2Goa(ures.ids, req, redisClient)
 
       // Number of error responses
       const errCount = gres.reduce((acc, curr) => {

@@ -1,6 +1,21 @@
+const Redis = require("ioredis")
 const RouteMatcher = require("./routes")
 const utils = require("./utils")
 const api = require("./api")
+
+/**
+ * Instantiate Redis client from env variable
+ */
+const redisClient = new Redis(
+  process.env.REDIS_MASTER_SERVICE_PORT,
+  process.env.REDIS_MASTER_SERVICE_HOST,
+)
+redisClient.on("connect", () => {
+  console.log("Redis client connected")
+})
+redisClient.on("error", err => {
+  console.log(`Something went wrong starting the Redis client: ${err}`)
+})
 
 const rmatcher = new RouteMatcher([
   {
@@ -26,7 +41,17 @@ const gene = async event => {
   res.set("Content-Type", "application/vnd.api+json")
   try {
     if (result.matched) {
-      return await result.fn(req, res)
+      const redisKey = `${req.params[0]}-${path}`
+      const exists = await redisClient.exists(redisKey)
+
+      if (exists === 1) {
+        const value = await redisClient.get(redisKey)
+        console.log(`successfully found Redis key: ${redisKey}`)
+        res.status(200)
+        return value
+      }
+
+      return await result.fn(req, res, redisClient)
     }
     return utils.errMessage(404, "no match for route", path)
   } catch (error) {
