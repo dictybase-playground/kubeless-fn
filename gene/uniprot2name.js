@@ -1,3 +1,13 @@
+const bunyan = require("bunyan")
+
+/**
+ * Create Bunyan logger
+ */
+const logger = bunyan.createLogger({
+  name: "uniprot2name",
+  streams: [{ level: "debug", stream: process.stderr }],
+})
+
 const uniprot2name = async (id, redisClient) => {
   const hash = "UNIPROT2NAME/uniprot"
 
@@ -6,7 +16,7 @@ const uniprot2name = async (id, redisClient) => {
 
     if (exists === 1) {
       const value = await redisClient.hget(hash, id)
-      console.log(`successfully found uniprotId ${id} and geneName ${value}`)
+      logger.info(`successfully found uniprotId ${id} and geneName ${value}`)
       return {
         data: {
           type: "genes",
@@ -19,7 +29,7 @@ const uniprot2name = async (id, redisClient) => {
       }
     }
 
-    console.log("uniprotId doesn't exist")
+    logger.info("uniprotId doesn't exist")
     return {
       data: {
         type: "genes",

@@ -1,4 +1,13 @@
 const fetch = require("node-fetch")
+const bunyan = require("bunyan")
+
+/**
+ * Create Bunyan logger
+ */
+const logger = bunyan.createLogger({
+  name: "go2name",
+  streams: [{ level: "debug", stream: process.stderr }],
+})
 
 const makeGoURL = id => {
   return `https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/${id}`
@@ -12,7 +21,7 @@ const goName2Id = async (id, redisClient) => {
 
     if (res.ok) {
       await redisClient.hset(hash, json.results[0].id, json.results[0].name)
-      console.log(`Successfully set ${json.results[0].id}:${json.results[0].name} in hash ${hash}`)
+      logger.info(`Successfully set ${json.results[0].id}:${json.results[0].name} in hash ${hash}`)
       return {
         data: {
           type: "goa",
@@ -49,7 +58,7 @@ const go2name = async (id, redisClient) => {
 
     if (exists === 1) {
       const value = await redisClient.hget(hash, id)
-      console.log(`successfully found goId ${id} and goName ${value}`)
+      logger.info(`successfully found goId ${id} and goName ${value}`)
       return {
         data: {
           type: "goa",

@@ -1,8 +1,17 @@
 const fetch = require("node-fetch")
+const bunyan = require("bunyan")
 const utils = require("./utils")
 const { gene2name } = require("./gene2name")
 const { go2name } = require("./go2name")
 const { uniprot2name } = require("./uniprot2name")
+
+/**
+ * Create Bunyan logger
+ */
+const logger = bunyan.createLogger({
+  name: "gene",
+  streams: [{ level: "debug", stream: process.stderr }],
+})
 
 const makeUniprotURL = id => {
   return `https://www.uniprot.org/uniprot?query=gene:${id}&columns=id&format=list`
@@ -269,7 +278,7 @@ const geneGoaHandler = async (req, res, redisClient) => {
           }),
         }
         await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
-        console.log(`successfully set Redis key: ${redisKey}`)
+        logger.info(`successfully set Redis key: ${redisKey}`)
         return data
       }
       // All of them are error responses
@@ -286,7 +295,7 @@ const geneGoaHandler = async (req, res, redisClient) => {
         data: succRes.response,
       }
       await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
-      console.log(`successfully set ${data}`)
+      logger.info(`successfully set ${data}`)
       return data
     }
     res.status(ures.error.status)

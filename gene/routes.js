@@ -1,3 +1,13 @@
+const bunyan = require("bunyan")
+
+/**
+ * Create Bunyan logger
+ */
+const logger = bunyan.createLogger({
+  name: "routes",
+  streams: [{ level: "debug", stream: process.stderr }],
+})
+
 module.exports = class RouteMatcher {
   constructor(config) {
     if (Object.prototype.toString.call(config) !== "[object Array]") {
@@ -5,7 +15,7 @@ module.exports = class RouteMatcher {
     }
     this.config = config.map(c => {
       if (typeof c.handler !== "function") {
-        console.log("handler is not a function %s", typeof c.handler)
+        logger.error("handler is not a function %s", typeof c.handler)
         throw new Error("handler is not a function")
       }
       let obj = {}
@@ -27,7 +37,7 @@ module.exports = class RouteMatcher {
 
   addRoute({ route, handler }) {
     if (typeof handler !== "function") {
-      console.log("handler is not a function %s", typeof handler)
+      logger.error("handler is not a function %s", typeof handler)
       throw new Error("handler is not a function")
     }
     let obj = {}

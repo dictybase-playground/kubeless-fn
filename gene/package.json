@@ -9,6 +9,7 @@
   "author": "Siddhartha Basu",
   "license": "ISC",
   "dependencies": {
+    "bunyan": "^1.8.12",
     "ioredis": "^4.0.0",
     "node-fetch": "^2.2.0"
   },

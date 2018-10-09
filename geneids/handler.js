@@ -100,22 +100,17 @@ const file2redis = event => {
     const fileLocation = filepath.join(folder, event.data.file)
 
     // get object from Minio
-    minioClient.fGetObject(
-      event.data.bucket,
-      event.data.file,
-      fileLocation,
-      err => {
-        if (err) {
-          return logger.error("Error getting object: ", err)
-        }
-        logger.info("Object download success!")
+    minioClient.fGetObject(event.data.bucket, event.data.file, fileLocation, err => {
+      if (err) {
+        return logger.error("Error getting object: ", err)
+      }
+      logger.info("Object download success!")
 
-        gff
-          .read(fileLocation)
-          .on("data", setCache)
-          .on("end", done)
-      },
-    )
+      gff
+        .read(fileLocation)
+        .on("data", setCache)
+        .on("end", done)
+    })
 
     res.status(201)
     return {}
@@ -161,7 +156,7 @@ const gene2name = async event => {
  */
 const checkCache = () => {
   redisClient.hgetall(hash, (err, result) => {
-    console.log(JSON.stringify(result)) // {"key":"value","second key":"second value"}
+    logger.info(JSON.stringify(result)) // {"key":"value","second key":"second value"}
   })
 }
 
