@@ -1,13 +1,12 @@
 const bunyan = require("bunyan")
 
-/**
- * Create Bunyan logger
- */
+// create Bunyan logger
 const logger = bunyan.createLogger({
   name: "uniprot2name",
   streams: [{ level: "debug", stream: process.stderr }],
 })
 
+// checks if uniprot ID and gene name are in cache
 const uniprot2name = async (id, redisClient) => {
   const hash = "UNIPROT2NAME/uniprot"
 

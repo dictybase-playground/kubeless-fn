@@ -1,9 +1,7 @@
 const fetch = require("node-fetch")
 const bunyan = require("bunyan")
 
-/**
- * Create Bunyan logger
- */
+// create Bunyan logger
 const logger = bunyan.createLogger({
   name: "go2name",
   streams: [{ level: "debug", stream: process.stderr }],
@@ -13,6 +11,7 @@ const makeGoURL = id => {
   return `https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/${id}`
 }
 
+// fetches GO data and sets ID/name into cache
 const goName2Id = async (id, redisClient) => {
   const hash = "GO2NAME/goids"
   try {
@@ -50,6 +49,7 @@ const goName2Id = async (id, redisClient) => {
   }
 }
 
+// checks if go id/name are in cache
 const go2name = async (id, redisClient) => {
   const hash = "GO2NAME/goids"
 

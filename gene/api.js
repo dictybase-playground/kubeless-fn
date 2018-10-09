@@ -144,6 +144,8 @@ const uniprot2Goa = async (ids, req, redisClient) => {
           const extArr = []
           for (const j of i.attributes.extensions) {
             for (const k of j.connectedXrefs) {
+              // use switch case to include name conversions
+              // in returned data structures
               switch (k.db) {
                 case "DDB": {
                   const name = await gene2name(k.id, redisClient)
@@ -233,6 +235,7 @@ const geneHandler = async (req, res, redisClient) => {
         links: { self: utils.getOriginalURL(req) },
       })
     }
+    // if issue with getting gene name from cache, just use gene ID
     res.status(200)
     return Promise.resolve({
       data: {
@@ -277,6 +280,7 @@ const geneGoaHandler = async (req, res, redisClient) => {
             return r.response
           }),
         }
+        // set key-value cache for 15 days
         await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
         logger.info(`successfully set Redis key: ${redisKey}`)
         return data

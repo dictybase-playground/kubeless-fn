@@ -1,19 +1,21 @@
 const bunyan = require("bunyan")
 
-/**
- * Create Bunyan logger
- */
+// create Bunyan logger
 const logger = bunyan.createLogger({
   name: "gene2name",
   streams: [{ level: "debug", stream: process.stderr }],
 })
 
-// converts gene ID to name using Redis cache
+// gets gene ID and name from Redis cache
 const gene2name = async (id, redisClient) => {
+  // set namespace for redis hash
   const hash = "GENE2NAME/geneids"
+
   try {
+    // check if id exists in hash
     const exists = await redisClient.hexists(hash, id)
 
+    // found the id
     if (exists === 1) {
       const value = await redisClient.hget(hash, id)
       logger.info(`successfully found geneId ${id} and geneName ${value}`)
@@ -29,6 +31,7 @@ const gene2name = async (id, redisClient) => {
       }
     }
 
+    // didn't find the id
     logger.info("geneid doesn't exist")
     return {
       status: 404,
