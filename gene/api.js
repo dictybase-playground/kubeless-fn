@@ -260,6 +260,18 @@ const geneHandler = async (req, res, redisClient) => {
 const geneGoaHandler = async (req, res, redisClient) => {
   const orgURL = req.get("x-original-uri")
   const redisKey = `${req.params[0]}-${orgURL}`
+
+  /**
+   * Determine length of Redis cache
+   */
+  let cacheExpire
+  if (process.env.REDIS_CACHE_EXPIRATION) {
+    cacheExpire = process.env.REDIS_CACHE_EXPIRATION
+  } else {
+    // set key-value cache for 15 days
+    cacheExpire = 60 * 60 * 24 * 15
+  }
+
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
@@ -281,7 +293,7 @@ const geneGoaHandler = async (req, res, redisClient) => {
           }),
         }
         // set key-value cache for 15 days
-        await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
+        await redisClient.set(redisKey, JSON.stringify(data), "EX", cacheExpire)
         logger.info(`successfully set Redis key: ${redisKey}`)
         return data
       }
@@ -298,7 +310,7 @@ const geneGoaHandler = async (req, res, redisClient) => {
         links: { self: utils.getOriginalURL(req) },
         data: succRes.response,
       }
-      await redisClient.set(redisKey, JSON.stringify(data), "EX", 60 * 60 * 24 * 15)
+      await redisClient.set(redisKey, JSON.stringify(data), "EX", cacheExpire)
       logger.info(`successfully set ${data}`)
       return data
     }
