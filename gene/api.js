@@ -268,15 +268,14 @@ const geneGoaHandler = async (req, res, redisClient) => {
   if (process.env.REDIS_CACHE_EXPIRATION) {
     cacheExpire = process.env.REDIS_CACHE_EXPIRATION
   } else {
-    // set key-value cache for 15 days
-    cacheExpire = 60 * 60 * 24 * 15
+    // set key-value cache for 7 days
+    cacheExpire = 60 * 60 * 24 * 7
   }
 
   try {
     const ures = await geneId2Uniprot(req.params[0])
     if (ures.isSuccess()) {
       const gres = await uniprot2Goa(ures.ids, req, redisClient)
-
       // Number of error responses
       const errCount = gres.reduce((acc, curr) => {
         if (curr.isError()) {
@@ -314,8 +313,8 @@ const geneGoaHandler = async (req, res, redisClient) => {
       logger.info(`successfully set ${data}`)
       return data
     }
-    res.status(ures.error.status)
-    return utils.errMessage(ures.error.status, ures.message, orgURL)
+    res.status(ures.errorn.http_status)
+    return utils.errMessage(ures.errorn.http_status, ures.message, orgURL)
   } catch (error) {
     res.status(500)
     return utils.errMessage(500, error.message, orgURL)
