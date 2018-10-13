@@ -4,6 +4,7 @@ const gff = require("bionode-gff")
 const filepath = require("path")
 const tmp = require("tmp")
 const bunyan = require("bunyan")
+const fpath = require("path")
 
 // Set the hash location
 const hash = "GENE2NAME/geneids"
@@ -92,12 +93,12 @@ const file2redis = event => {
       port: parseInt(process.env.MINIO_SERVICE_PORT, 10),
       useSSL: false,
       accessKey: process.env.MINIO_ACCESS_KEY,
-      secretKey: process.env.MINIO_SERVICE_KEY,
+      secretKey: process.env.MINIO_SECRET_KEY,
     })
     // create temp folder to store file
     const tmpObj = tmp.dirSync({ prefix: "minio-" })
     const folder = tmpObj.name
-    const fileLocation = filepath.join(folder, event.data.file)
+    const fileLocation = filepath.join(folder, fpath.basename(event.data.file))
 
     // get object from Minio
     minioClient.fGetObject(event.data.bucket, event.data.file, fileLocation, err => {

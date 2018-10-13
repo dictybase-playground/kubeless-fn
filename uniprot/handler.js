@@ -67,7 +67,7 @@ const txt2redis = event => {
       port: parseInt(process.env.MINIO_SERVICE_PORT, 10),
       useSSL: false,
       accessKey: process.env.MINIO_ACCESS_KEY,
-      secretKey: process.env.MINIO_SERVICE_KEY,
+      secretKey: process.env.MINIO_SECRET_KEY,
     })
     // create temp folder to store file
     const tmpObj = tmp.dirSync({ prefix: "minio-" })
