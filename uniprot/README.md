@@ -32,8 +32,6 @@ Upload file to any folder inside that bucket
 
 The above bucket and folder path are for example only, any name could be used instead.
 
-**Important:** make sure you change this bucket's [policy](https://docs.minio.io/docs/minio-client-complete-guide#policy) to `download`.
-
 ### Create metadata json file
 
 This file specifies the file location in the object storage.
@@ -54,7 +52,7 @@ This file specifies the file location in the object storage.
 - deploy the uniprotcachefn function
 
   > `$_> kubeless function deploy \`  
-  > `uniprotcachefn --runtime nodejs8 --from-file handler.js --handler handler.txt2redis`  
+  > `uniprotcachefn --runtime nodejs8 --from-file uniprot.zip --handler handler.txt2redis`  
   > `--dependencies package.json --namespace dictybase -e MINIO_ACCESS_KEY=YOUR_KEY -e MINIO_SECRET_KEY=YOUR_KEY`
 
 <em>Note: you also need to ensure `REDIS_MASTER_SERVICE_HOST`, `REDIS_MASTER_SERVICE_PORT`, `MINIO_SERVICE_HOST` and `MINIO_SERVICE_PORT` are set as well.</em>
