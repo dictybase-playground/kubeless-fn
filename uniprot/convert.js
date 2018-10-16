@@ -17,7 +17,18 @@ txt.read = function(path) {
       .replace(/\s+/g, " ")
       .split(" ")
 
-    if (parts.length === 4) {
+    if (parts.length === 3) {
+      // this means it only shows gene name, gene ID, uniprot ID
+      const feature = {
+        geneName: parts[0],
+        geneNameSyn: "",
+        geneId: parts[1],
+        uniprotId: parts[2],
+        uniprotName: "",
+        size: "",
+      }
+      txt.emit("data", feature)
+    } else if (parts.length === 4) {
       // this means the synonyms and gene ID columns are missing
       const feature = {
         geneName: parts[0],
