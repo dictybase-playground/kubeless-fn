@@ -152,13 +152,4 @@ const gene2name = async event => {
   }
 }
 
-/**
- * Function to check what's in the cache
- */
-const checkCache = () => {
-  redisClient.hgetall(hash, (err, result) => {
-    logger.info(JSON.stringify(result)) // {"key":"value","second key":"second value"}
-  })
-}
-
-module.exports = { file2redis, gene2name, checkCache }
+module.exports = { file2redis, gene2name }

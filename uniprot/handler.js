@@ -75,22 +75,17 @@ const txt2redis = event => {
     const fileLocation = filepath.join(folder, event.data.file)
 
     // get object from Minio
-    minioClient.fGetObject(
-      event.data.bucket,
-      event.data.file,
-      fileLocation,
-      err => {
-        if (err) {
-          return logger.error("Error getting object: ", err)
-        }
-        logger.info("Object download success!")
+    minioClient.fGetObject(event.data.bucket, event.data.file, fileLocation, err => {
+      if (err) {
+        return logger.error("Error getting object: ", err)
+      }
+      logger.info("Object download success!")
 
-        txt
-          .read(fileLocation)
-          .on("data", setCache)
-          .on("end", done)
-      },
-    )
+      txt
+        .read(fileLocation)
+        .on("data", setCache)
+        .on("end", done)
+    })
 
     res.status(201)
     return {}
@@ -117,9 +112,7 @@ const uniprot2name = async event => {
 
     if (exists === 1) {
       const value = await redisClient.hget(hash, uniprotId)
-      logger.info(
-        `successfully found uniprotId ${uniprotId} and geneName ${value}`,
-      )
+      logger.info(`successfully found uniprotId ${uniprotId} and geneName ${value}`)
       res.status(200)
       return utils.successObj(uniprotId, value)
     }
@@ -133,13 +126,4 @@ const uniprot2name = async event => {
   }
 }
 
-/**
- * Function to check what's in the cache
- */
-const checkCache = () => {
-  redisClient.hgetall(hash, (err, result) => {
-    logger.info(JSON.stringify(result)) // {"key":"value","second key":"second value"}
-  })
-}
-
-module.exports = { txt2redis, uniprot2name, checkCache }
+module.exports = { txt2redis, uniprot2name }
