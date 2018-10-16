@@ -13,7 +13,11 @@ A [kubeless](https://kubeless.io) function to deploy in kubernetes cluster.
   > `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene`  
   > `--dependencies package.json --namespace dictybase`
 
-<em>Note: if you want to set a custom length for Redis cache expiration, you can use the env variable `REDIS_CACHE_EXPIRATION` (number must be in seconds). The default is set to 7 days.</em>
+<em>Note: if you want to set a custom length for Redis cache expiration, you can use the env variable `REDIS_CACHE_EXPIRATION` (number must be number of days). The default is set to 7 days.</em> An example:
+
+> `$_> kubeless function deploy \`  
+> `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene`  
+> `--dependencies package.json --namespace dictybase -e REDIS_CACHE_EXPIRATION=1`
 
 - check the status of function
 
