@@ -1,17 +1,8 @@
 const fetch = require("node-fetch")
-const bunyan = require("bunyan")
 const utils = require("./utils")
 const { gene2name } = require("./gene2name")
 const { go2name } = require("./go2name")
 const { uniprot2name } = require("./uniprot2name")
-
-/**
- * Create Bunyan logger
- */
-const logger = bunyan.createLogger({
-  name: "gene",
-  streams: [{ level: "debug", stream: process.stderr }],
-})
 
 const makeUniprotURL = id => {
   return `https://www.uniprot.org/uniprot?query=gene:${id}&columns=id&format=list`
@@ -259,18 +250,6 @@ const geneHandler = async (req, res, redisClient) => {
 
 const geneGoaHandler = async (req, res, redisClient) => {
   const orgURL = req.get("x-original-uri")
-  const redisKey = `${req.params[0]}-${orgURL}`
-
-  /**
-   * Determine length of Redis cache
-   */
-  let cacheExpire
-  if (!isNaN(process.env.REDIS_CACHE_EXPIRATION)) {
-    cacheExpire = 60 * 60 * 24 * process.env.REDIS_CACHE_EXPIRATION
-  } else {
-    // set default key-value cache for 7 days
-    cacheExpire = 60 * 60 * 24 * 7
-  }
 
   try {
     const ures = await geneId2Uniprot(req.params[0])
@@ -291,9 +270,6 @@ const geneGoaHandler = async (req, res, redisClient) => {
             return r.response
           }),
         }
-        // set key-value cache for 15 days
-        await redisClient.set(redisKey, JSON.stringify(data), "EX", cacheExpire)
-        logger.info(`successfully set Redis key: ${redisKey}`)
         return data
       }
       // All of them are error responses
@@ -309,8 +285,6 @@ const geneGoaHandler = async (req, res, redisClient) => {
         links: { self: utils.getOriginalURL(req) },
         data: succRes.response,
       }
-      await redisClient.set(redisKey, JSON.stringify(data), "EX", cacheExpire)
-      logger.info(`successfully set ${data}`)
       return data
     }
     res.status(ures.errorn.http_status)

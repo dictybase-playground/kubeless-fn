@@ -53,6 +53,17 @@ const gene = async event => {
       const redisKey = `${req.params[0]}-${path}`
       const exists = await redisClient.exists(redisKey)
 
+      /**
+       * Determine length of Redis cache
+       */
+      let cacheExpire
+      if (!isNaN(process.env.REDIS_CACHE_EXPIRATION)) {
+        cacheExpire = 60 * 60 * 24 * process.env.REDIS_CACHE_EXPIRATION
+      } else {
+        // set default key-value cache for 7 days
+        cacheExpire = 60 * 60 * 24 * 7
+      }
+
       if (exists === 1) {
         const value = await redisClient.get(redisKey)
         logger.info(`successfully found Redis key: ${redisKey}`)
@@ -60,7 +71,11 @@ const gene = async event => {
         return value
       }
 
-      return await result.fn(req, res, redisClient)
+      const data = await result.fn(req, res, redisClient)
+      await redisClient.set(redisKey, JSON.stringify(data), "EX", cacheExpire)
+      logger.info(`successfully set Redis key: ${redisKey}`)
+
+      return data
     }
     return utils.errMessage(404, "no match for route", path)
   } catch (error) {
