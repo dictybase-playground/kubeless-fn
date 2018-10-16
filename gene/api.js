@@ -265,10 +265,10 @@ const geneGoaHandler = async (req, res, redisClient) => {
    * Determine length of Redis cache
    */
   let cacheExpire
-  if (process.env.REDIS_CACHE_EXPIRATION) {
-    cacheExpire = process.env.REDIS_CACHE_EXPIRATION
+  if (!isNaN(process.env.REDIS_CACHE_EXPIRATION)) {
+    cacheExpire = 60 * 60 * 24 * process.env.REDIS_CACHE_EXPIRATION
   } else {
-    // set key-value cache for 7 days
+    // set default key-value cache for 7 days
     cacheExpire = 60 * 60 * 24 * 7
   }
 
