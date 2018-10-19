@@ -10,13 +10,13 @@ A [kubeless](https://kubeless.io) function to deploy in kubernetes cluster.
 
 - deploy the function
   > `$_> kubeless function deploy \`  
-  > `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene`  
+  > `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene \`  
   > `--dependencies package.json --namespace dictybase`
 
 <em>Note: if you want to set a custom length for Redis cache expiration, you can use the env variable `REDIS_CACHE_EXPIRATION` (number must be number of days). The default is set to 7 days.</em> An example:
 
 > `$_> kubeless function deploy \`  
-> `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene`  
+> `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene \`  
 > `--dependencies package.json --namespace dictybase -e REDIS_CACHE_EXPIRATION=1`
 
 - check the status of function
@@ -25,7 +25,7 @@ A [kubeless](https://kubeless.io) function to deploy in kubernetes cluster.
 
 - to update the function, use:
   > `$_> kubeless function update \`  
-  > `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene`  
+  > `genefn --runtime nodejs8 --from-file gene.zip --handler handler.gene \`  
   > `--dependencies package.json --namespace dictybase`
 
 ## Add a http trigger to create an ingress
@@ -55,5 +55,11 @@ JSON API format.
 If you need to easily clear the Redis cache, there is a function for that. Run this command to deploy:
 
 > `$_> kubeless function deploy \`  
-> `clearfn --runtime nodejs8 --from-file clear.js --handler clear.clearCache`  
+> `clearfn --runtime nodejs8 --from-file clear.js --handler clear.clearCache \`  
 > `--dependencies package.json --namespace dictybase`
+
+Then run the function:
+
+`kubeless function call clearfn`
+
+You can check the `clearfn` logs to see what keys have been removed.
