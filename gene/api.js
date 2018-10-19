@@ -5,7 +5,7 @@ const { go2name } = require("./go2name")
 const { uniprot2name } = require("./uniprot2name")
 
 const makeUniprotURL = id => {
-  return `https://www.uniprot.org/uniprot?query=gene:${id}&columns=id&format=list`
+  return `https://www.uniprot.org/uniprot?query=${id}&columns=id&format=list`
 }
 
 const makeGoaURL = id => {
