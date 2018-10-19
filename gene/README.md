@@ -57,11 +57,3 @@ If you need to easily clear the Redis cache, there is a function for that. Run t
 > `$_> kubeless function deploy \`  
 > `clearfn --runtime nodejs8 --from-file clear.js --handler clear.clearCache`  
 > `--dependencies package.json --namespace dictybase`
-
-Then run:
-
-> `$_> kubeless trigger http create clearfn --function-nameclearfn \`  
-> `--hostname betafunc.dictybase.local --tls-secret dictybase-local-tls`  
-> `--namespace dictybase --path clear`
-
-Now when you access `https://betafunc.dictybase.local/clear` it will clear whatever is in the main Redis cache (not the hashes set up for Uniprot and GO IDs). Check the `clearfn` logs to see what keys have been removed.
