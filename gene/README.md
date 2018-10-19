@@ -60,6 +60,6 @@ If you need to easily clear the Redis cache, there is a function for that. Run t
 
 Then run the function:
 
-`kubeless function call clearfn`
+`kubeless function call clearfn -n dictybase`
 
 You can check the `clearfn` logs to see what keys have been removed.
