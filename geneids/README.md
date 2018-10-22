@@ -82,3 +82,17 @@ will look like this.
 > `$_> curl -k -X POST https://betafunc.dictybase.local/geneids/cache -H 'Content-Type: application/json' -d @metadata.json`
 
 **Note:** If your GFF3 file contains extra content that doesn't fit the GFF3 format (nine-column, tab-delimited), the script will throw an error when it reaches this content. However, since it reads line-by-line, it will still properly store the real GFF3 data before it gets to this point.
+
+## Clear Cache
+
+If you need to easily clear the Redis geneids cache, there is a function for that. Run this command to deploy:
+
+> `$_> kubeless function deploy \`  
+> `cleargenesfn --runtime nodejs8 --from-file clear.js --handler clear.clearCache \`  
+> `--dependencies package.json --namespace dictybase`
+
+Then run the function:
+
+`kubeless function call cleargenesfn -n dictybase`
+
+You can check the `cleargenesfn` logs to see what keys have been removed.
