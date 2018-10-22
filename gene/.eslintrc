@@ -10,6 +10,7 @@
     "object-curly-newline": ["error", { "multiline": true }],
     "no-await-in-loop": "off",
     "no-restricted-syntax": "off",
-    "no-restricted-globals": "off"
+    "no-restricted-globals": "off",
+    "prefer-destructuring": "off"
   }
 }

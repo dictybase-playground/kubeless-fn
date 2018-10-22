@@ -28,11 +28,11 @@ redisClient.on("error", err => {
 
 const rmatcher = new RouteMatcher([
   {
-    route: new RegExp("^/genes/([A-Z]{3}_G[0-9]{4,})$"),
+    route: new RegExp("^/genes/([A-Za-z0-9-_]{1,})$"),
     handler: api.geneHandler,
   },
   {
-    route: new RegExp("^/genes/([A-Z]{3}_G[0-9]{4,})/goas$"),
+    route: new RegExp("^/genes/([A-Za-z0-9-_]{1,})/goas$"),
     handler: api.geneGoaHandler,
   },
 ])

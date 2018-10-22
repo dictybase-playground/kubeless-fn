@@ -66,6 +66,9 @@ const errMessage = (code, msg, url) => {
 const setCache = feature => {
   if (feature.type === "gene") {
     redisClient.hset(hash, feature.attributes.ID, feature.attributes.Name)
+    logger.info(`successfully set ${feature.attributes.ID} with value ${feature.attributes.Name}`)
+    redisClient.hset(hash,feature.attributes.Name, feature.attributes.ID)
+    logger.info(`successfully set ${feature.attributes.Name} with value ${feature.attributes.ID}`)
   }
 }
 const done = () => {
@@ -138,7 +141,7 @@ const gene2name = async event => {
 
     if (exists === 1) {
       const value = await redisClient.hget(hash, geneId)
-      logger.info(`successfully found geneId ${geneId} and geneName ${value}`)
+      logger.info(`successfully found gene ${geneId} with value ${value}`)
       res.status(200)
       return successObj(geneId, value)
     }
