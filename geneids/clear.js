@@ -25,16 +25,16 @@ redisClient.on("error", err => {
 })
 
 /**
- * Kubeless function that clears the main Redis cache
+ * Kubeless function that clears the gene name/ID cache
  */
 const clearCache = async () => {
+    const hash = "GENE2NAME/geneids"
   try {
-    const list = await redisClient.keys("DDB*")
-    logger.info("initial cache: ", list)
-    for (const i of list) {
-      redisClient.del(i)
-      logger.info("successfully removed ", i)
-    }
+    const initialSize = await redisClient.hlen(hash)
+    logger.info("initial cache size: ", initialSize)
+    const removal = await redisClient.del(hash)
+    const afterSize = await redisClient.hlen(hash)
+    logger.info("new cache size: ", afterSize)
   } catch (error) {
     logger.error(error)
   }
