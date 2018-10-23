@@ -28,11 +28,15 @@ redisClient.on("error", err => {
 
 const rmatcher = new RouteMatcher([
   {
-    route: new RegExp("^/genes/([A-Za-z0-9-_]{1,})$"),
+    route: new RegExp("^/genes/name/([A-Za-z0-9][A-Za-z0-9-]{2,})$"),
+    handler: api.geneNameHandler,
+  },
+  {
+    route: new RegExp("^/genes/([A-Z]{3}_G[0-9]{4,})$"),
     handler: api.geneHandler,
   },
   {
-    route: new RegExp("^/genes/([A-Za-z0-9-_]{1,})/goas$"),
+    route: new RegExp("^/genes/([A-Z]{3}_G[0-9]{4,})/goas$"),
     handler: api.geneGoaHandler,
   },
 ])
@@ -48,6 +52,7 @@ const gene = async event => {
   const result = rmatcher.dispatch(path, req)
   res.set("X-Powered-By", "kubeless")
   res.set("Content-Type", "application/vnd.api+json")
+
   try {
     if (result.matched) {
       const redisKey = `${req.params[0]}-${path}`

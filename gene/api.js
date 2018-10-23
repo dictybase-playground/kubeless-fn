@@ -327,16 +327,58 @@ const geneGoaHandler = async (req, res, redisClient) => {
   const orgURL = req.get("x-original-uri")
   const param = req.params[0]
 
-  // if route is hit using gene name, get its ID from cache
-  // ID must be used to convert gene ID to uniprot
-  let geneParam
-  if (param.slice(0, 4) !== "DDB_") {
-    geneParam = await redisClient.hget("GENE2NAME/geneids", param)
-  } else {
-    geneParam = param
+  try {
+    const ures = await geneId2Uniprot(param)
+    if (ures.isSuccess()) {
+      const gres = await uniprot2Goa(ures.ids, req, redisClient)
+      // Number of error responses
+      const errCount = gres.reduce((acc, curr) => {
+        if (curr.isError()) {
+          return acc + 1
+        }
+        return acc
+      }, 0)
+      // No error
+      if (errCount === 0) {
+        const data = {
+          links: { self: utils.getOriginalURL(req) },
+          data: gres.map(r => {
+            return r.response
+          }),
+        }
+        return data
+      }
+      // All of them are error responses
+      if (gres.length === errCount) {
+        res.status(gres[0].error.status)
+        return utils.errMessage(gres[0].error.status, gres[0].message, orgURL)
+      }
+      // Mix of error and success
+      const succRes = gres.find(r => {
+        return r.isSuccess()
+      })
+      const data = {
+        links: { self: utils.getOriginalURL(req) },
+        data: succRes.response,
+      }
+      return data
+    }
+    res.status(ures.errorn.http_status)
+    return utils.errMessage(ures.errorn.http_status, ures.message, orgURL)
+  } catch (error) {
+    res.status(500)
+    return utils.errMessage(500, error.message, orgURL)
   }
+}
+
+const geneNameHandler = async (req, res, redisClient) => {
+  const orgURL = req.get("x-original-uri")
+  const param = req.params[0]
+  console.log(param)
 
   try {
+    const geneParam = await redisClient.hget("GENE2NAME/geneids", param)
+    console.log("geneParam: ", geneParam)
     const ures = await geneId2Uniprot(geneParam)
     if (ures.isSuccess()) {
       const gres = await uniprot2Goa(ures.ids, req, redisClient)
@@ -383,4 +425,5 @@ const geneGoaHandler = async (req, res, redisClient) => {
 module.exports = {
   geneHandler,
   geneGoaHandler,
+  geneNameHandler,
 }
