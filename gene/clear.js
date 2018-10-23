@@ -29,11 +29,15 @@ redisClient.on("error", err => {
  */
 const clearCache = async () => {
   try {
-    const list = await redisClient.keys("DDB*")
+    const list = await redisClient.keys("*")
     logger.info("initial cache: ", list)
     for (const i of list) {
-      redisClient.del(i)
-      logger.info("successfully removed ", i)
+      if (i === "GENE2NAME/geneids" || i === "UNIPROT2NAME/uniprot" || i === "GO2NAME/goids") {
+        logger.info("did not remove hash ", i)
+      } else {
+        redisClient.del(i)
+        logger.info("successfully removed ", i)
+      }
     }
   } catch (error) {
     logger.error(error)
