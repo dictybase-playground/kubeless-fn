@@ -44,6 +44,7 @@ It will available through the mapped host, for example through
 
 `/genes/{id}` - Initial gene information for the given gene id.  
 `/genes/{id}/goas` - Gene ontology annotations for the given gene id.
+`/genes/name/{name}` - Initial gene information for the given gene name.  
 
 > `$_> curl -k https://betafunc.dictybase.local/genes/DDB_G0292996`
 
