@@ -18,7 +18,7 @@ const gene2name = async (id, redisClient) => {
     // found the id
     if (exists === 1) {
       const value = await redisClient.hget(hash, id)
-      logger.info(`successfully found geneId ${id} and geneName ${value}`)
+      logger.info(`successfully found gene ${id} with value ${value}`)
       return {
         data: {
           type: "genes",

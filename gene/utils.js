@@ -2,8 +2,8 @@ const getOriginalURL = req => {
   return `${req.get("x-forwarded-proto")}://${req.hostname}${req.get("x-original-uri")}`
 }
 
-const getGoaURL = req => {
-  return `${req.get("x-forwarded-proto")}://${req.hostname}/genes/${req.params[0]}/goas`
+const getGoaURL = (req, id) => {
+  return `${req.get("x-forwarded-proto")}://${req.hostname}/genes/${id}/goas`
 }
 
 const errMessage = (code, msg, url) => {
