@@ -30,9 +30,12 @@ redisClient.on("error", err => {
 const clearCache = async () => {
   try {
     const list = await redisClient.keys("*")
-    logger.info("initial cache: ", list)
+    logger.info("initial cache size: ", list.length)
     for (const i of list) {
-      if (i === "GENE2NAME/geneids" || i === "UNIPROT2NAME/uniprot" || i === "GO2NAME/goids") {
+      // if (i === "GENE2NAME/geneids" || i === "UNIPROT2NAME/uniprot" || i === "GO2NAME/goids") {
+      //   logger.info("did not remove hash ", i)
+      // }
+      if (!i.includes("/genes/")) {
         logger.info("did not remove hash ", i)
       } else {
         redisClient.del(i)
