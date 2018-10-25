@@ -28,19 +28,16 @@ redisClient.on("error", err => {
  * Kubeless function that clears the main Redis cache
  */
 const clearCache = async () => {
+  /**
+   * All relevant keys start with "genelookup:" so look for those
+   * If they exist, remove them
+   */
   try {
-    const list = await redisClient.keys("*")
+    const list = await redisClient.keys("genelookup:*")
     logger.info("initial cache size: ", list.length)
     for (const i of list) {
-      // if (i === "GENE2NAME/geneids" || i === "UNIPROT2NAME/uniprot" || i === "GO2NAME/goids") {
-      //   logger.info("did not remove hash ", i)
-      // }
-      if (!i.includes("/genes/")) {
-        logger.info("did not remove hash ", i)
-      } else {
-        redisClient.del(i)
-        logger.info("successfully removed ", i)
-      }
+      redisClient.del(i)
+      logger.info("successfully removed ", i)
     }
   } catch (error) {
     logger.error(error)

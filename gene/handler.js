@@ -55,7 +55,7 @@ const gene = async event => {
 
   try {
     if (result.matched) {
-      const redisKey = `${req.params[0]}-${path}`
+      const redisKey = `genelookup:${req.params[0]}-${path}`
       const exists = await redisClient.exists(redisKey)
 
       /**
