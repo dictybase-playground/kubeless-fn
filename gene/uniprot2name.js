@@ -28,7 +28,7 @@ const uniprot2name = async (id, redisClient) => {
       }
     }
 
-    logger.info("uniprotId doesn't exist")
+    logger.error("uniprotId not found in our cache")
     return {
       data: {
         type: "genes",
@@ -40,6 +40,7 @@ const uniprot2name = async (id, redisClient) => {
       },
     }
   } catch (error) {
+    logger.error("error in catch: ", error)
     return {
       status: 500,
       title: error.message,

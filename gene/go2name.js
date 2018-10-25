@@ -33,6 +33,7 @@ const goName2Id = async (id, redisClient) => {
       }
     }
 
+    logger.error("error fetching GO data: ", json.messages[0])
     return {
       status: 404,
       title: json.messages[0],
@@ -40,6 +41,7 @@ const goName2Id = async (id, redisClient) => {
       meta: { creator: "kubeless function api" },
     }
   } catch (error) {
+    logger.error("error in goName2Id catch: ", error)
     return {
       status: 500,
       title: error.message,
@@ -73,6 +75,7 @@ const go2name = async (id, redisClient) => {
 
     return goName2Id(id, redisClient)
   } catch (error) {
+    logger.error("error in go2name catch: ", error)
     return {
       status: 500,
       title: error.message,
