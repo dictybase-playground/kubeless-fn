@@ -32,14 +32,15 @@ const gene2name = async (id, redisClient) => {
     }
 
     // didn't find the id
-    logger.info("geneid doesn't exist")
+    logger.error("geneid doesn't exist")
     return {
       status: 404,
       title: "no match for route",
-      detail: "no match for route",
+      detail: "no match for route -- gene not found in database",
       meta: { creator: "kubeless function api" },
     }
   } catch (error) {
+    logger.error("error in gene2name catch: ", error)
     return {
       status: 500,
       title: error.message,

@@ -1,8 +1,15 @@
 const fetch = require("node-fetch")
+const bunyan = require("bunyan")
 const utils = require("./utils")
 const { gene2name } = require("./gene2name")
 const { go2name } = require("./go2name")
 const { uniprot2name } = require("./uniprot2name")
+
+// create Bunyan logger
+const logger = bunyan.createLogger({
+  name: "api.js",
+  streams: [{ level: "debug", stream: process.stderr }],
+})
 
 const makeUniprotURL = id => {
   return `https://www.uniprot.org/uniprot?query=${id}&columns=id&format=list`
@@ -270,8 +277,15 @@ const geneHandler = async (req, res, redisClient) => {
   try {
     const param = req.params[0]
     const name = await gene2name(param, redisClient)
-    res.status(200)
 
+    // if there's an error, return that response
+    if (name.status) {
+      res.status(name.status)
+      return name
+    }
+
+    // otherwise, we're good -- return the data
+    res.status(200)
     return Promise.resolve({
       data: {
         type: "genes",
@@ -287,6 +301,7 @@ const geneHandler = async (req, res, redisClient) => {
       links: { self: utils.getOriginalURL(req) },
     })
   } catch (error) {
+    logger.error("geneHandler catch: ", error)
     res.status(500)
     return utils.errMessage(500, error.message, req.get("x-original-uri"))
   }
@@ -296,8 +311,15 @@ const geneNameHandler = async (req, res, redisClient) => {
   try {
     const param = req.params[0]
     const name = await gene2name(param, redisClient)
-    res.status(200)
 
+    // if there's an error, return that response
+    if (name.status) {
+      res.status(name.status)
+      return name
+    }
+
+    // otherwise, we're good -- return the data
+    res.status(200)
     return Promise.resolve({
       data: {
         type: "genes",
@@ -313,11 +335,11 @@ const geneNameHandler = async (req, res, redisClient) => {
       links: { self: utils.getOriginalURL(req) },
     })
   } catch (error) {
+    logger.error("geneNameHandler error: ", error)
     res.status(500)
     return utils.errMessage(500, error.message, req.get("x-original-uri"))
   }
 }
-
 
 const geneGoaHandler = async (req, res, redisClient) => {
   const orgURL = req.get("x-original-uri")

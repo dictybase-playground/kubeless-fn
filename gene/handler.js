@@ -69,6 +69,7 @@ const gene = async event => {
         cacheExpire = 60 * 60 * 24 * 7
       }
 
+      // if key is found in cache, just get data from there
       if (exists === 1) {
         const value = await redisClient.get(redisKey)
         logger.info(`successfully found Redis key: ${redisKey}`)
@@ -77,13 +78,19 @@ const gene = async event => {
       }
 
       const data = await result.fn(req, res, redisClient)
-      await redisClient.set(redisKey, JSON.stringify(data), "EX", cacheExpire)
-      logger.info(`successfully set Redis key: ${redisKey}`)
+
+      // if there is no error, set the data in the cache
+      if (!data.status) {
+        await redisClient.set(redisKey, JSON.stringify(data), "EX", cacheExpire)
+        logger.info(`successfully set Redis key: ${redisKey}`)
+      }
 
       return data
     }
+    logger.error("error in handler")
     return utils.errMessage(404, "no match for route", path)
   } catch (error) {
+    logger.error("error in handler catch: ", error)
     return utils.errMessage(500, error.message, path)
   }
 }
