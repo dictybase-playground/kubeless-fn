@@ -169,11 +169,25 @@ const uniprot2Goa = async (ids, req, redisClient) => {
                 }
                 case "UniProtKB": {
                   const name = await uniprot2name(k.id, redisClient)
-                  const response = {
-                    db: k.db,
-                    id: k.id,
-                    relation: k.relation,
-                    name: name.data.attributes.geneName,
+                  let response
+                  const geneName = name.data.attributes.geneName
+                  // if gene name from cache is actually an ID,
+                  // do one more conversion to get proper gene name
+                  if (geneName.substr(0, 3) === "DDB") {
+                    const convertedID = await gene2name(geneName, redisClient)
+                    response = {
+                      db: k.db,
+                      id: k.id,
+                      relation: k.relation,
+                      name: convertedID.data.attributes.geneName,
+                    }
+                  } else {
+                    response = {
+                      db: k.db,
+                      id: k.id,
+                      relation: k.relation,
+                      name: geneName,
+                    }
                   }
                   extArr.push(response)
                   break
@@ -223,18 +237,21 @@ const uniprot2Goa = async (ids, req, redisClient) => {
                 case "UniProtKB": {
                   const name = await uniprot2name(k.id, redisClient)
                   let response
-                  // if the gene name and ID are identical,
-                  // no need to return name as a separate key
-                  if (name.data.attributes.geneName === k.id) {
+                  const geneName = name.data.attributes.geneName
+                  // if gene name from cache is actually an ID,
+                  // do one more conversion to get proper gene name
+                  if (geneName.substr(0, 3) === "DDB") {
+                    const convertedID = await gene2name(geneName, redisClient)
                     response = {
                       db: k.db,
                       id: k.id,
+                      name: convertedID.data.attributes.geneName,
                     }
                   } else {
                     response = {
                       db: k.db,
                       id: k.id,
-                      name: name.data.attributes.geneName,
+                      name: geneName,
                     }
                   }
                   withArr.push(response)

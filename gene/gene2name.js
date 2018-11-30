@@ -32,7 +32,7 @@ const gene2name = async (id, redisClient) => {
     }
 
     // didn't find the id
-    logger.error("geneid doesn't exist")
+    logger.error(`geneid ${id} doesn't exist`)
     return {
       status: 404,
       title: "no match for route",
