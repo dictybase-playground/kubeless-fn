@@ -193,7 +193,6 @@ const uniprot2Goa = async (ids, req, redisClient) => {
           i.attributes.extensions.pop()
           // replace with new data array
           i.attributes.extensions = extArr
-          freshArr.push(i)
         }
 
         if (i.attributes.with !== null) {
@@ -255,10 +254,8 @@ const uniprot2Goa = async (ids, req, redisClient) => {
           i.attributes.with.pop()
           // replace with new data array
           i.attributes.with = withArr
-          freshArr.push(i)
-        } else {
-          freshArr.push(i)
         }
+        freshArr.push(i)
       }
       resp.response = freshArr
       resp.success = true
